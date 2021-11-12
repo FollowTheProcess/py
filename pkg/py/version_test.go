@@ -58,6 +58,36 @@ func TestVersion_FromFileName(t *testing.T) {
 			want:    Version{},
 			wantErr: true,
 		},
+		{
+			name:    "bad major component",
+			args:    args{filename: "pythonp.7"},
+			want:    Version{},
+			wantErr: true,
+		},
+		{
+			name:    "bad minor component",
+			args:    args{filename: "python3.f"},
+			want:    Version{},
+			wantErr: true,
+		},
+		{
+			name:    "whitespace before",
+			args:    args{filename: " python 3.7 "},
+			want:    Version{},
+			wantErr: true,
+		},
+		{
+			name:    "whitespace between python and version",
+			args:    args{filename: "python 3.7"},
+			want:    Version{},
+			wantErr: true,
+		},
+		{
+			name:    "whitespace after",
+			args:    args{filename: "python 3.7 "},
+			want:    Version{},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {

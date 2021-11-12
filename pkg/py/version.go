@@ -39,7 +39,7 @@ func (v *Version) FromFileName(filename string) error {
 
 	parts := strings.Split(version, ".")
 
-	// If we can't a part either side of a ".", we have a bad version
+	// If we can't get a part either side of a ".", we have a bad version
 	if len(parts) != 2 {
 		return fmt.Errorf("malformed interpreter version: %s from filename: %s", version, filename)
 	}
