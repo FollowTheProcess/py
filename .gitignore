@@ -13,6 +13,7 @@
 # The project binary
 py
 !cmd/py
+!pkg/py
 
 # Test binary, built with `go test -c`
 *.test
