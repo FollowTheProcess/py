@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 // App represents the py program
@@ -26,6 +27,13 @@ func (a *App) Launch(args []string) error {
 
 // List is the handler for the list command
 func (a *App) List() error {
-	fmt.Fprintln(a.Out, "Would list interpreters here")
+	fmt.Fprintln(a.Out, "Here is your path:")
+	path := os.Getenv("PATH")
+	for i, dir := range filepath.SplitList(path) {
+		if dir == "" {
+			dir = "."
+		}
+		fmt.Fprintf(a.Out, "%d: %s\n", i, dir)
+	}
 	return nil
 }
