@@ -18,14 +18,13 @@ builds:
     goos:
       - linux
       - darwin
-      - windows
     goarch:
-      - 386
+      - "386"
       - amd64
       - arm64
 
 brews:
-  - goarm: 6
+  - goarm: "6"
     tap:
       owner: "FollowTheProcess"
       name: homebrew-tap
@@ -45,7 +44,6 @@ archives:
   - replacements:
       darwin: Darwin
       linux: Linux
-      windows: Windows
       386: i386
       amd64: x86_64
 

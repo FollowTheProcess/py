@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-
-	"github.com/FollowTheProcess/py/pkg/hello"
 )
 
 // App represents the py program
@@ -20,10 +18,14 @@ func New() *App {
 	return &App{Out: os.Stdout}
 }
 
-// Hello is the handler for the py hello command
-func (a *App) Hello() error {
-	message := hello.Say("A Thing")
+// Launch is the handler for the main program entry point
+func (a *App) Launch(args []string) error {
+	fmt.Fprintf(a.Out, "Launching: %v\n", args)
+	return nil
+}
 
-	fmt.Fprintln(a.Out, message)
+// List is the handler for the list command
+func (a *App) List() error {
+	fmt.Fprintln(a.Out, "Would list interpreters here")
 	return nil
 }
