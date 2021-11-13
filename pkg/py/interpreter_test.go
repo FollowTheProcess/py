@@ -253,6 +253,129 @@ func TestInterpreterListSort(t *testing.T) {
 	}
 }
 
+func TestInterpreter_SatisfiesMajor(t *testing.T) {
+	type args struct {
+		version int
+	}
+
+	tests := []struct {
+		name        string
+		interpreter Interpreter
+		args        args
+		want        bool
+	}{
+		{
+			name:        "3.8 satisfies 3",
+			interpreter: Interpreter{Major: 3, Minor: 8},
+			args:        args{version: 3},
+			want:        true,
+		},
+		{
+			name:        "3.9 satisfies 3",
+			interpreter: Interpreter{Major: 3, Minor: 9},
+			args:        args{version: 3},
+			want:        true,
+		},
+		{
+			name:        "3.10 satisfies 3",
+			interpreter: Interpreter{Major: 3, Minor: 10},
+			args:        args{version: 3},
+			want:        true,
+		},
+		{
+			name:        "2.7 does not satisfy 3",
+			interpreter: Interpreter{Major: 2, Minor: 7},
+			args:        args{version: 3},
+			want:        false,
+		},
+		{
+			name:        "4.1 does not satisfy 3",
+			interpreter: Interpreter{Major: 4, Minor: 1},
+			args:        args{version: 3},
+			want:        false,
+		},
+		{
+			name:        "4.0 satisfies 4",
+			interpreter: Interpreter{Major: 4, Minor: 0},
+			args:        args{version: 4},
+			want:        true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.interpreter.SatisfiesMajor(tt.args.version); got != tt.want {
+				t.Errorf("got %v, wanted %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestInterpreter_SatisfiesExact(t *testing.T) {
+	type args struct {
+		major int
+		minor int
+	}
+
+	tests := []struct {
+		name        string
+		interpreter Interpreter
+		args        args
+		want        bool
+	}{
+		{
+			name:        "3.9 satisfies 3.9",
+			interpreter: Interpreter{Major: 3, Minor: 9},
+			args:        args{major: 3, minor: 9},
+			want:        true,
+		},
+		{
+			name:        "3.8 satisfies 3.8",
+			interpreter: Interpreter{Major: 3, Minor: 8},
+			args:        args{major: 3, minor: 8},
+			want:        true,
+		},
+		{
+			name:        "3.7 satisfies 3.7",
+			interpreter: Interpreter{Major: 3, Minor: 7},
+			args:        args{major: 3, minor: 7},
+			want:        true,
+		},
+		{
+			name:        "9.12 satisfies 9.12",
+			interpreter: Interpreter{Major: 9, Minor: 12},
+			args:        args{major: 9, minor: 12},
+			want:        true,
+		},
+		{
+			name:        "2.7 does not satisfy 3.7",
+			interpreter: Interpreter{Major: 2, Minor: 7},
+			args:        args{major: 3, minor: 7},
+			want:        false,
+		},
+		{
+			name:        "3.7 does not satisfy 2.7",
+			interpreter: Interpreter{Major: 3, Minor: 7},
+			args:        args{major: 2, minor: 7},
+			want:        false,
+		},
+		{
+			name:        "3.10 does not satisfy 3.11",
+			interpreter: Interpreter{Major: 3, Minor: 10},
+			args:        args{major: 3, minor: 11},
+			want:        false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.interpreter.SatisfiesExact(tt.args.major, tt.args.minor); got != tt.want {
+				t.Errorf("got %v, wanted %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func BenchmarkInterpreterSort(b *testing.B) {
 	input := InterpreterList(InterpreterList{
 		{
