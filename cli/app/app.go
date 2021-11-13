@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 
 	"github.com/FollowTheProcess/py/pkg/py"
 )
@@ -37,6 +38,10 @@ func (a *App) List() error {
 	if err != nil {
 		return fmt.Errorf("error getting python interpreters: %w", err)
 	}
+
+	// Ensure interpreters are sorted latest to oldest regardless of
+	// any filepath based sorting from ReadDir
+	sort.Sort(found)
 
 	for _, interpreter := range found {
 		fmt.Fprintln(a.Out, interpreter)
