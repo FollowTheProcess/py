@@ -31,6 +31,9 @@ func (a *App) Launch(args []string) error {
 		}
 	}
 
+	// If args match the pattern `-X`, we want a major version
+	// get the latest major version
+
 	return nil
 }
 

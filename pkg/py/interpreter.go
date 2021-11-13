@@ -87,6 +87,18 @@ func (i Interpreter) String() string {
 	return fmt.Sprintf("%d.%d\t│ %s", i.Major, i.Minor, i.Path)
 }
 
+// SatisfiesMajor tests whether the calling Interpreter satisfies the constraint
+// of it's major version supporting the requested `version`
+func (i Interpreter) SatisfiesMajor(version int) bool {
+	return i.Major == version
+}
+
+// SatisfiesExact tests whether the calling Interpreter satisfies
+// the exact version contraint given by `major` and `minor`
+func (i Interpreter) SatisfiesExact(major, minor int) bool {
+	return i.Major == major && i.Minor == minor
+}
+
 // InterpreterList represents a list of python interpreters
 // and enables us to implement sorting which is how we tell which one is
 // the latest python version without relying on filesystem lexical order
