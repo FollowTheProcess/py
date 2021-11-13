@@ -77,3 +77,12 @@ func (i *Interpreter) FromFilePath(path string) error {
 
 	return nil
 }
+
+// String satisfies the "stringer" interface and allows an `Interpreter`
+// to be pretty printed using fmt.Println
+func (i Interpreter) String() string {
+	// Note, the vertical bar character below is not the U+007C "Vertical Line" pipe character
+	// '|' but the U+2502 "Box Drawings Light Vertical" character '│'
+	// this is so, when printed it looks like a proper table
+	return fmt.Sprintf("%d.%d\t│ %s", i.Major, i.Minor, i.Path)
+}

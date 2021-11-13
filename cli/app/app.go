@@ -28,10 +28,6 @@ func (a *App) Launch(args []string) error {
 
 // List is the handler for the list command
 func (a *App) List() error {
-	fmt.Fprintln(a.Out, "Python interpreters:")
-
-	// TODO: For now this just prints the raw Interpreter structs for debugging
-
 	paths, err := py.GetPath()
 	if err != nil {
 		return fmt.Errorf("could not get $PATH: %w", err)
@@ -43,7 +39,7 @@ func (a *App) List() error {
 	}
 
 	for _, interpreter := range found {
-		fmt.Fprintf(a.Out, "%#v\n", interpreter)
+		fmt.Fprintln(a.Out, interpreter)
 	}
 
 	return nil
