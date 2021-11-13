@@ -19,9 +19,9 @@ var (
 
 const (
 	helpText = `
-Python launcher for Unix.
+Python launcher for Unix
 
-Providing a convenient way to launch python 🐍
+Launch your python interpreter the lazy/smart way 🚀
 
 py is meant to become your go-to command for launching a python interpreter
 while writing code.
@@ -54,6 +54,9 @@ $ py -3
 
 # Launch a specific version on $PATH
 $ py -3.10
+
+# Can use normal python flags
+$ py -m venv .venv
 
 # List all found interpreters
 $ py --list
