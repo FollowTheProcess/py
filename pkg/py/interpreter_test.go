@@ -105,3 +105,39 @@ func TestInterpreter_FromFilePath(t *testing.T) {
 		})
 	}
 }
+
+func TestInterpreter_String(t *testing.T) {
+	type fields struct {
+		Major int
+		Minor int
+		Path  string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name:   "python 3.10",
+			fields: fields{Major: 3, Minor: 10, Path: "/usr/local/bin/python3.10"},
+			want:   "3.10\t│ /usr/local/bin/python3.10",
+		},
+		{
+			name:   "python 3.9",
+			fields: fields{Major: 3, Minor: 9, Path: "/usr/local/bin/python3.9"},
+			want:   "3.9\t│ /usr/local/bin/python3.9",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			i := &Interpreter{
+				Major: tt.fields.Major,
+				Minor: tt.fields.Minor,
+				Path:  tt.fields.Path,
+			}
+			if got := i.String(); got != tt.want {
+				t.Errorf("got %s, wanted %s", got, tt.want)
+			}
+		})
+	}
+}
