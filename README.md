@@ -62,11 +62,5 @@ not necessity.
 
 ## Quickstart
 
-### Credits
-
-This package was created with [cookiecutter] and the [FollowTheProcess/go_cli] project template.
-
-[cookiecutter]: https://github.com/cookiecutter/cookiecutter
-[FollowTheProcess/go_cli]: https://github.com/FollowTheProcess/go_cli
 [python-launcher]: https://github.com/brettcannon/python-launcher
 [README]: https://github.com/brettcannon/python-launcher/blob/main/README.md
