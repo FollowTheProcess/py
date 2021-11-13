@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"sort"
+	"syscall"
 
 	"github.com/FollowTheProcess/py/pkg/py"
 )
@@ -23,7 +24,13 @@ func New() *App {
 
 // Launch is the handler for the main program entry point
 func (a *App) Launch(args []string) error {
-	fmt.Fprintf(a.Out, "Launching: %v\n", args)
+	// If no args given, launch a REPL with the latest interpreter
+	if len(args) == 0 {
+		if err := launchLatest(); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -45,6 +52,31 @@ func (a *App) List() error {
 
 	for _, interpreter := range found {
 		fmt.Fprintln(a.Out, interpreter)
+	}
+
+	return nil
+}
+
+// launchLatest is a convenience function to launch the latest python
+// interpreter found on $PATH
+func launchLatest() error {
+	path, err := py.GetPath()
+	if err != nil {
+		return fmt.Errorf("could not get $PATH: %w", err)
+	}
+	interpreters, err := py.GetAllPythonInterpreters(path)
+	if err != nil {
+		return fmt.Errorf("error fetching python interpreters: %w", err)
+	}
+
+	sort.Sort(interpreters)
+
+	latest := interpreters[0]
+
+	// We must use syscall.Exec here as we must "swap" to python
+	// simply running a subprocess will not work how the user expects
+	if err := syscall.Exec(latest.Path, []string{}, []string{}); err != nil {
+		return fmt.Errorf("error launching %s: %w", latest.Path, err)
 	}
 
 	return nil
