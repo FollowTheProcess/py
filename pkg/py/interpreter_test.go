@@ -254,7 +254,7 @@ func TestInterpreterListSort(t *testing.T) {
 }
 
 func BenchmarkInterpreterSort(b *testing.B) {
-	input := InterpreterList([]Interpreter{
+	input := InterpreterList(InterpreterList{
 		{
 			Major: 3,
 			Minor: 7,

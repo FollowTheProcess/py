@@ -90,7 +90,7 @@ func (i Interpreter) String() string {
 // InterpreterList represents a list of python interpreters
 // and enables us to implement sorting which is how we tell which one is
 // the latest python version without relying on filesystem lexical order
-// which may not be reproducible
+// which may not be deterministic
 type InterpreterList []Interpreter
 
 // Len returns the number of interpreters in the list

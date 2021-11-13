@@ -16,7 +16,7 @@ import (
 // if files are executable etc and $PATH is unlikely to be cluttered with random
 // files called `python` unless they are the interpreter executables
 func GetAllPythonInterpreters(paths []string) (InterpreterList, error) {
-	var interpreters []Interpreter
+	var interpreters InterpreterList
 
 	for _, path := range paths {
 		found, err := getPythonInterpreters(path)

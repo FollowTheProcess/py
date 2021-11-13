@@ -46,7 +46,7 @@ func Test_getPythonInterpreters(t *testing.T) {
 		{
 			name: "test",
 			args: args{dir: testDir},
-			want: []Interpreter{
+			want: InterpreterList{
 				{
 					Major: 3,
 					Minor: 10,
@@ -97,7 +97,7 @@ func TestGetAllPythonInterpreters(t *testing.T) {
 				filepath.Join(testDir, "pythonpath2"),
 				filepath.Join(testDir, "pythonpath3"),
 			}},
-			want: []Interpreter{
+			want: InterpreterList{
 				{
 					Major: 3,
 					Minor: 10,
