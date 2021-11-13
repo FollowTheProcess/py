@@ -15,7 +15,7 @@ import (
 // be populated by searching through $PATH, meaning we don't have to bother checking
 // if files are executable etc and $PATH is unlikely to be cluttered with random
 // files called `python` unless they are the interpreter executables
-func GetAllPythonInterpreters(paths []string) ([]Interpreter, error) {
+func GetAllPythonInterpreters(paths []string) (InterpreterList, error) {
 	var interpreters []Interpreter
 
 	for _, path := range paths {
@@ -56,7 +56,7 @@ func GetPath() ([]string, error) {
 
 // getPythonInterpreters accepts an absolute path to a directory under which
 // it will search for python interpreters, returning any it finds
-func getPythonInterpreters(dir string) ([]Interpreter, error) {
+func getPythonInterpreters(dir string) (InterpreterList, error) {
 	contents, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("could not read contents of %s: %w", dir, err)

@@ -40,7 +40,7 @@ func Test_getPythonInterpreters(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    []Interpreter
+		want    InterpreterList
 		wantErr bool
 	}{
 		{
@@ -87,7 +87,7 @@ func TestGetAllPythonInterpreters(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    []Interpreter
+		want    InterpreterList
 		wantErr bool
 	}{
 		{
@@ -139,7 +139,7 @@ func TestGetAllPythonInterpreters(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("got %#v, wanted %#v", got, tt.want)
+				t.Errorf("got %v, wanted %v", got, tt.want)
 			}
 		})
 	}

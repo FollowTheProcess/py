@@ -39,8 +39,8 @@ func (i *Interpreter) FromFilePath(path string) error {
 	// we can split off the version simply by indexing from the end of `python`
 	// to the end of the string
 	// This is a naive index that doesn't take UTF-8 runes into account but
-	// since this is a filepath I think that's pretty safe
-	// this will also catch things like python-config but we check later for version numbers
+	// since this is by definition a Unix filepath I think that's pretty safe
+	// this will also catch things like `python-config` but we check later for version numbers
 	// so this is fine too
 	version := filename[len(pythonExePrefix):]
 
@@ -85,4 +85,41 @@ func (i Interpreter) String() string {
 	// '|' but the U+2502 "Box Drawings Light Vertical" character '│'
 	// this is so, when printed it looks like a proper table
 	return fmt.Sprintf("%d.%d\t│ %s", i.Major, i.Minor, i.Path)
+}
+
+// InterpreterList represents a list of python interpreters
+// and enables us to implement sorting which is how we tell which one is
+// the latest python version without relying on filesystem lexical order
+// which may not be reproducible
+type InterpreterList []Interpreter
+
+// Len returns the number of interpreters in the list
+func (il InterpreterList) Len() int {
+	return len(il)
+}
+
+// Less returns whether the element with index i should sort
+// less than element with index j
+// Note: we reverse it here and actually test for greater than
+// because we want the latest interpreter to be at the front of the slice
+func (il InterpreterList) Less(i, j int) bool {
+	// Short circuit, if i.Major > j.Major, return true straight away
+	if il[i].Major > il[j].Major {
+		return true
+	}
+
+	// Only get here if majors are equal or i.Major < j.Major
+	if il[i].Major == il[j].Major {
+		// If majors are equal, compare minors
+		return il[i].Minor > il[j].Minor
+	}
+
+	// Now only condition remaining is i.Major < j.Major
+	// in which case the answer is false
+	return false
+}
+
+// Swap swaps the position of two elements in the list
+func (il InterpreterList) Swap(i, j int) {
+	il[i], il[j] = il[j], il[i]
 }

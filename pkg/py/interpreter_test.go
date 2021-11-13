@@ -2,6 +2,7 @@ package py
 
 import (
 	"reflect"
+	"sort"
 	"testing"
 )
 
@@ -139,5 +140,168 @@ func TestInterpreter_String(t *testing.T) {
 				t.Errorf("got %s, wanted %s", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestInterpreterListSort(t *testing.T) {
+	tests := []struct {
+		name string
+		list InterpreterList
+		want InterpreterList
+	}{
+		{
+			name: "test",
+			list: InterpreterList{
+				// We don't intialise paths because it doesn't matter for sorting
+				{
+					Major: 3,
+					Minor: 7,
+				},
+				{
+					Major: 3,
+					Minor: 4,
+				},
+				{
+					Major: 2,
+					Minor: 7,
+				},
+				{
+					Major: 3,
+					Minor: 10,
+				},
+				{
+					Major: 4,
+					Minor: 1,
+				},
+				{
+					Major: 3,
+					Minor: 11,
+				},
+				{
+					Major: 4,
+					Minor: 0,
+				},
+				{
+					Major: 3,
+					Minor: 12,
+				},
+				{
+					Major: 4,
+					Minor: 10,
+				},
+				{
+					Major: 2,
+					Minor: 6,
+				},
+			},
+			want: InterpreterList{
+				{
+					Major: 4,
+					Minor: 10,
+				},
+				{
+					Major: 4,
+					Minor: 1,
+				},
+				{
+					Major: 4,
+					Minor: 0,
+				},
+				{
+					Major: 3,
+					Minor: 12,
+				},
+				{
+					Major: 3,
+					Minor: 11,
+				},
+				{
+					Major: 3,
+					Minor: 10,
+				},
+				{
+					Major: 3,
+					Minor: 7,
+				},
+				{
+					Major: 3,
+					Minor: 4,
+				},
+				{
+					Major: 2,
+					Minor: 7,
+				},
+				{
+					Major: 2,
+					Minor: 6,
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if len(tt.list) != len(tt.want) {
+				t.Fatalf("len(list): %d, len(want): %d. Check the test cases", len(tt.list), len(tt.want))
+			}
+			sort.Sort(tt.list)
+			// Now tt.list should be sorted and match tt.want
+			if !reflect.DeepEqual(tt.list, tt.want) {
+				t.Errorf("got %v, wanted %v", tt.list, tt.want)
+			}
+		})
+	}
+}
+
+func BenchmarkInterpreterSort(b *testing.B) {
+	input := InterpreterList([]Interpreter{
+		{
+			Major: 3,
+			Minor: 7,
+		},
+		{
+			Major: 3,
+			Minor: 4,
+		},
+		{
+			Major: 2,
+			Minor: 7,
+		},
+		{
+			Major: 3,
+			Minor: 10,
+		},
+		{
+			Major: 4,
+			Minor: 1,
+		},
+		{
+			Major: 3,
+			Minor: 11,
+		},
+		{
+			Major: 4,
+			Minor: 0,
+		},
+		{
+			Major: 3,
+			Minor: 12,
+		},
+		{
+			Major: 4,
+			Minor: 10,
+		},
+		{
+			Major: 2,
+			Minor: 6,
+		},
+	})
+
+	// Reset prior to actually running the benchmark
+	// ensures we don't include the initialisation stuff
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		sort.Sort(input)
 	}
 }
