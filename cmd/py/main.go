@@ -26,7 +26,8 @@ func run(args []string) error {
 
 	n := len(args)
 
-	// No args, launch latest python on $PATH
+	// No args, follow control flow to find version to launch
+	// TODO: Implement control flow, currently just launches latest every time
 	if n == 0 {
 		if err := app.LaunchLatest(); err != nil {
 			return fmt.Errorf("%w", err)

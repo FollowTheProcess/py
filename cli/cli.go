@@ -65,6 +65,10 @@ Flags:
   --help      Help for py
   --list      List all found python interpreters on $PATH
   --version   Show py's version info
+
+Note: This is not *the* python launcher as in brettcannon/python-launcher,
+this is FollowTheProcess/python-launcher - an (approximate) port of the original
+to Go.
 `
 )
 
@@ -112,6 +116,26 @@ func (a *App) List() error {
 	return nil
 }
 
+// LaunchREPL will follow py's control flow and launch whatever is the most appropriate python REPL
+// Control flow is:
+// 	1) Activated virtual environment
+// 	2) .venv directory
+// 	3) PY_PYTHON env variable
+// 	4) Latest version on $PATH
+func (a *App) LaunchREPL() error {
+	// Activated virtual environment
+	if path := os.Getenv("VIRTUAL_ENV"); path != "" {
+		if err := launch(path, []string{}); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// TODO: The rest of control flow
+
+	return nil
+}
+
 // LaunchLatest will search through $PATH, find the latest python interpreter
 // and launch it
 func (a *App) LaunchLatest() error {
@@ -128,11 +152,22 @@ func (a *App) LaunchLatest() error {
 
 	latest := interpreters[0]
 
-	// We must use syscall.Exec here as we must "swap" to python
-	// simply running a subprocess will not work how the user expects
-	if err := syscall.Exec(latest.Path, []string{}, []string{}); err != nil {
-		return fmt.Errorf("error launching %s: %w", latest.Path, err)
+	if err := launch(latest.Path, []string{}); err != nil {
+		return err
 	}
 
+	return nil
+}
+
+// launch will launch a python interpreter at a specific (absolute) path
+// and forward any args to the called interpreter. If no args required
+// just pass an empty slice
+func launch(path string, args []string) error {
+	// We must use syscall.Exec here as we must "swap" the process to python
+	// simply running a subprocess e.g. (os/exec), even without waiting
+	// for the subprocess to complete, will not work
+	if err := syscall.Exec(path, args, []string{}); err != nil {
+		return fmt.Errorf("error launching %s: %w", path, err)
+	}
 	return nil
 }
