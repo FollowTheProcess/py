@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
+
+	"github.com/FollowTheProcess/py/pkg/py"
 )
 
 // App represents the py program
@@ -27,13 +28,23 @@ func (a *App) Launch(args []string) error {
 
 // List is the handler for the list command
 func (a *App) List() error {
-	fmt.Fprintln(a.Out, "Here is your path:")
-	path := os.Getenv("PATH")
-	for i, dir := range filepath.SplitList(path) {
-		if dir == "" {
-			dir = "."
-		}
-		fmt.Fprintf(a.Out, "%d: %s\n", i, dir)
+	fmt.Fprintln(a.Out, "Python interpreters:")
+
+	// TODO: For now this just prints the raw Interpreter structs for debugging
+
+	paths, err := py.GetPath()
+	if err != nil {
+		return fmt.Errorf("could not get $PATH: %w", err)
 	}
+
+	found, err := py.GetAllPythonInterpreters(paths)
+	if err != nil {
+		return fmt.Errorf("error getting python interpreters: %w", err)
+	}
+
+	for _, interpreter := range found {
+		fmt.Fprintf(a.Out, "%#v\n", interpreter)
+	}
+
 	return nil
 }

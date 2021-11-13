@@ -33,6 +33,10 @@ fmt:
 test *flags: fmt
     go test -race ./... {{ flags }}
 
+# Run all project benchmarks
+bench: fmt
+    go test -bench=. {{ PROJECT_PATH }}/pkg/py -benchmem
+
 # Lint the project and auto-fix errors if possible
 lint: fmt
     golangci-lint run --fix
