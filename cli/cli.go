@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sort"
 	"syscall"
 
@@ -18,7 +19,8 @@ var (
 )
 
 const (
-	helpText = `
+	vitualEnvKey = "VIRTUAL_ENV" // The key for the python activated venv environment variable
+	helpText     = `
 Python launcher for Unix
 
 Launch your python interpreter the lazy/smart way 🚀
@@ -123,15 +125,36 @@ func (a *App) List() error {
 // 	3) PY_PYTHON env variable
 // 	4) Latest version on $PATH
 func (a *App) LaunchREPL() error {
+	// Here we follow the control flow specified, returning to the caller
+	// on the first matched condition, thus preventing later conditions
+	// from evaluating. This ensures our order of priority is followed
+
 	// Activated virtual environment
-	if path := os.Getenv("VIRTUAL_ENV"); path != "" {
-		if err := launch(path, []string{}); err != nil {
+	if path := os.Getenv(vitualEnvKey); path != "" {
+		exe := filepath.Join(path, "bin", "python")
+		if err := launch(exe, []string{}); err != nil {
 			return err
 		}
 		return nil
 	}
 
-	// TODO: The rest of control flow
+	// Directory called .venv in cwd
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("error getting cwd: %w", err)
+	}
+	exe := py.GetVenvDir(cwd)
+	if exe != "" {
+		// Means we found a python interpreter inside .venv, so launch it
+		if err := launch(exe, []string{}); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// PY_PYTHON env variable specifying a X.Y version identifier
+	// e.g. 3.10
+	// TODO: This
 
 	return nil
 }
