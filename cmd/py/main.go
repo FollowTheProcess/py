@@ -26,10 +26,9 @@ func run(args []string) error {
 
 	n := len(args)
 
-	// No args, follow control flow to find version to launch
-	// TODO: Implement control flow, currently just launches latest every time
+	// No args, follow control flow to find version of the REPL to launch
 	if n == 0 {
-		if err := app.LaunchLatest(); err != nil {
+		if err := app.LaunchREPL(); err != nil {
 			return fmt.Errorf("%w", err)
 		}
 		return nil
