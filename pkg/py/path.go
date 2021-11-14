@@ -31,11 +31,11 @@ func GetAllPythonInterpreters(paths []string) (InterpreterList, error) {
 
 // GetPath looks up the $PATH environment variable and will return
 // each unique path in a string slice
-func GetPath() ([]string, error) {
-	path, ok := os.LookupEnv("PATH")
+func GetPath(key string) ([]string, error) {
+	path, ok := os.LookupEnv(key)
 	if !ok {
 		// This should literally never happen on any Unix system
-		return nil, fmt.Errorf("could not get $PATH")
+		return nil, fmt.Errorf("could not get $%s", key)
 	}
 
 	paths := []string{}

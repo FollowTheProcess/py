@@ -8,25 +8,6 @@ import (
 	"github.com/FollowTheProcess/py/internal/test"
 )
 
-func TestGetPath(t *testing.T) {
-	got, err := GetPath()
-	if err != nil {
-		t.Fatalf("getPath returned an error: %v", err)
-	}
-
-	if len(got) == 0 {
-		t.Fatal("length of returned path was 0")
-	}
-
-	// Since I don't like the idea of changing $PATH halfway through a test
-	// and that just about every Unix system ever has a /usr/bin
-	// this should be okay
-
-	if !isIn("/usr/bin", got) {
-		t.Error("/usr/bin not found in path")
-	}
-}
-
 func Test_getPythonInterpreters(t *testing.T) {
 	root, err := test.GetProjectRoot()
 	if err != nil {
@@ -145,6 +126,80 @@ func TestGetAllPythonInterpreters(t *testing.T) {
 	}
 }
 
+func TestGetPath(t *testing.T) {
+	// The default key for the test, so we can look for a wrong key
+	// get a missing env var and test the error handling
+	defaultKey := "PY_GETPATH_TEST"
+
+	tests := []struct {
+		name    string
+		key     string
+		path    string
+		want    []string
+		wantErr bool
+	}{
+		{
+			name:    "normal path",
+			key:     defaultKey,
+			path:    "/usr/bin:/usr/local/bin:/usr/local/somewhere",
+			want:    []string{"/usr/bin", "/usr/local/bin", "/usr/local/somewhere"},
+			wantErr: false,
+		},
+		{
+			name:    "empty",
+			key:     defaultKey,
+			path:    "",
+			want:    []string{},
+			wantErr: false,
+		},
+		{
+			name:    "duplicate entries",
+			key:     defaultKey,
+			path:    "/usr/bin:/usr/local/bin:/usr/bin:/usr/somewhere:/usr/local/bin",
+			want:    []string{"/usr/bin", "/usr/local/bin", "/usr/somewhere"},
+			wantErr: false,
+		},
+		{
+			name:    "empty entry should be replaced with .",
+			key:     defaultKey,
+			path:    "/usr/bin:/usr/local/bin::/usr/somewhere:",
+			want:    []string{"/usr/bin", "/usr/local/bin", ".", "/usr/somewhere"},
+			wantErr: false,
+		},
+		{
+			name:    "multiple empty entries should be one .",
+			key:     defaultKey,
+			path:    "/usr/bin::/usr/local/bin::/usr/somewhere:",
+			want:    []string{"/usr/bin", ".", "/usr/local/bin", "/usr/somewhere"},
+			wantErr: false,
+		},
+		{
+			name:    "unset key",
+			key:     "SOMETHING_ELSE",
+			path:    "/usr/bin:/usr/local/bin:/usr/local/somewhere",
+			want:    nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set our fake $PATH to the defaultKey
+			t.Setenv(defaultKey, tt.path)
+
+			// Get the value using the key specified in the test case
+			got, err := GetPath(tt.key)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetPath() error = %v, wantErr = %v", err, tt.wantErr)
+			}
+
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("got %#v, wanted %#v", got, tt.want)
+			}
+		})
+	}
+}
+
 func BenchmarkGetAllPythonInterpreters(b *testing.B) {
 	root, err := test.GetProjectRoot()
 	if err != nil {
@@ -242,13 +297,4 @@ func BenchmarkDeDupe(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		deDupe(paths)
 	}
-}
-
-func isIn(needle string, haystack []string) bool {
-	for _, thing := range haystack {
-		if thing == needle {
-			return true
-		}
-	}
-	return false
 }
