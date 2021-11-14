@@ -38,23 +38,35 @@ func run(args []string) error {
 
 	// 1 arg, most of the work
 	// check if matches -X/-X.Y or a supported flag and handle it if it does
-	// if not, it could be a file (e.g. python script.py) or a python arg (e.g. python -m venv .venv)
-	// in which case, if we have a -X/-X.Y pass all other args to this python, else latest python
+	// if not, it could be a file (e.g. python script.py)
 	if n == 1 {
 		switch arg := args[0]; {
 		case arg == "--help":
 			app.Help()
+
 		case arg == "--list":
 			if err := app.List(); err != nil {
 				return fmt.Errorf("%w", err)
 			}
+
 		case arg == "--version":
 			app.Version()
+
 		case isMajorSpecifier(arg):
-			fmt.Println("Got a -X")
+			major := parseMajorSpecifier(arg)
+			if err := app.LaunchMajor(major); err != nil {
+				return fmt.Errorf("%w", err)
+			}
+
 		case isExactSpecifier(arg):
-			fmt.Println("Got a -X.Y")
+			major, minor := parseExactSpecifier(arg)
+			if err := app.LaunchExact(major, minor); err != nil {
+				return fmt.Errorf("%w", err)
+			}
+
 		default:
+			// TODO: Must be a single file if we're here?
+			// in which case, launch latest python and pass through all args
 			fmt.Printf("default case hit. Arg: %s\n", arg)
 		}
 
@@ -94,6 +106,22 @@ func isMajorSpecifier(arg string) bool {
 	return true
 }
 
+// parseMajorSpecifier takes in an argument we already know to be a major specifier
+// and returns the integer version.
+//
+// In the interest of performance, thisfunction assumes that 'arg' is already a valid
+// major version specifier in string form
+func parseMajorSpecifier(arg string) int {
+	// Remove the "-"
+	arg = arg[1:]
+
+	// We ignore the error here because this will only get called
+	// in the case that isMajorSpecifier has evaluated to true
+	major, _ := strconv.Atoi(arg)
+
+	return major
+}
+
 // isExactSpecifier determines if the argument passed to it
 // is a valid exact version specifier (e.g. "-3.9")
 func isExactSpecifier(arg string) bool {
@@ -123,4 +151,24 @@ func isExactSpecifier(arg string) bool {
 	}
 
 	return true
+}
+
+// parseExactSpecifier takes in an argument we already know to be an exact version specifier
+// and returns the integer representations.
+//
+// In the interest of performance, this function assumes that 'arg' is already a valid
+// minor version specifier in string form
+func parseExactSpecifier(arg string) (int, int) {
+	// Remove the "-"
+	arg = arg[1:]
+
+	parts := strings.Split(arg, ".")
+	major, minor := parts[0], parts[1]
+
+	// We ignore the error here because this will only get called
+	// in the case that isExactSpecifier has evaluated to true
+	majorInt, _ := strconv.Atoi(major)
+	minorInt, _ := strconv.Atoi(minor)
+
+	return majorInt, minorInt
 }

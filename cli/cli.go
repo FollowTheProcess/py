@@ -165,6 +165,11 @@ func (a *App) LaunchREPL() error {
 	// e.g. 3.10
 	// TODO: This
 
+	// Fallback, launch latest on $PATH
+	if err := a.LaunchLatest(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
