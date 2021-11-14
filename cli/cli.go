@@ -3,14 +3,16 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
 	"syscall"
 
-	"github.com/FollowTheProcess/py/pkg/py"
+	"github.com/FollowTheProcess/py/pkg/interpreter"
 )
 
 var (
@@ -21,6 +23,7 @@ var (
 const (
 	vitualEnvKey = "VIRTUAL_ENV" // The key for the python activated venv environment variable
 	pathEnvKey   = "PATH"        // The key for the os $PATH environment variable
+	venv         = ".venv"       // The name of the default venv dir
 	helpText     = `
 Python launcher for Unix
 
@@ -98,12 +101,12 @@ func (a *App) Help() {
 
 // List is the handler for the list command
 func (a *App) List() error {
-	paths, err := py.GetPath(pathEnvKey)
+	paths, err := interpreter.GetPath(pathEnvKey)
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
 
-	found, err := py.GetAllPythonInterpreters(paths)
+	found, err := interpreter.GetAll(paths)
 	if err != nil {
 		return fmt.Errorf("error getting python interpreters: %w", err)
 	}
@@ -149,7 +152,7 @@ func (a *App) LaunchREPL() error {
 	if err != nil {
 		return fmt.Errorf("error getting cwd: %w", err)
 	}
-	exe := py.GetVenvDir(cwd)
+	exe := getVenvDir(cwd)
 	if exe != "" {
 		// Means we found a python interpreter inside .venv, so launch it
 		if err := launch(exe, []string{}); err != nil {
@@ -168,11 +171,11 @@ func (a *App) LaunchREPL() error {
 // LaunchLatest will search through $PATH, find the latest python interpreter
 // and launch it
 func (a *App) LaunchLatest() error {
-	path, err := py.GetPath(pathEnvKey)
+	path, err := interpreter.GetPath(pathEnvKey)
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
-	interpreters, err := py.GetAllPythonInterpreters(path)
+	interpreters, err := interpreter.GetAll(path)
 	if err != nil {
 		return fmt.Errorf("error fetching python interpreters: %w", err)
 	}
@@ -199,4 +202,27 @@ func launch(path string, args []string) error {
 		return fmt.Errorf("error launching %s: %w", path, err)
 	}
 	return nil
+}
+
+// getVenvDir will walk up from cwd looking for a directory called ".venv"
+// it will then ensure this directory contains a "pyvenv.cfg", the marker
+// that this is indeed a python virtual environment, and then return the absolute
+// path to the venv's interpreter
+//
+// If no .venv dir is found, will return an empty string
+func getVenvDir(cwd string) string {
+	// First look in the cwd, I imagine most of the time when searching for venvs
+	// we'll be in the root of a python project anyway so a lot of calls to this
+	// will exit here
+	if _, err := os.Stat(filepath.Join(cwd, venv)); errors.Is(err, fs.ErrNotExist) {
+		// The .venv dir does not exist, this is not an error
+		// but there is no interpreter path to return
+		return ""
+	}
+
+	// TODO: Currently only looks in cwd which is fine for 90% cases
+	// the real python-launcher will walk up the file tree looking for .venv
+	// this is on the plan but let's just get this all working first
+
+	return filepath.Join(cwd, venv, "bin", "python")
 }
