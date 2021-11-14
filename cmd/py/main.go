@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/FollowTheProcess/py/cli"
 )
@@ -48,6 +50,10 @@ func run(args []string) error {
 			}
 		case arg == "--version":
 			app.Version()
+		case isMajorSpecifier(arg):
+			fmt.Println("Got a -X")
+		case isExactSpecifier(arg):
+			fmt.Println("Got a -X.Y")
 		default:
 			fmt.Printf("default case hit. Arg: %s\n", arg)
 		}
@@ -62,4 +68,59 @@ func run(args []string) error {
 	fmt.Println("if not, just pass all args through to latest $PATH python")
 
 	return nil
+}
+
+// isMajorSpecifier determines if the argument passed to it
+// is a valid major version specifier (e.g. "-3")
+func isMajorSpecifier(arg string) bool {
+	// If we don't start with a "-" it's not a major specifier
+	if !strings.HasPrefix(arg, "-") {
+		return false
+	}
+
+	// If, after removing the "-", it's not just 1 character, it's not a major specifier
+	// this will of course catch 2 digit integers, but I don't see python10
+	// coming any time soon
+	arg = arg[1:]
+	if len(arg) != 1 {
+		return false
+	}
+
+	// If we can't convert whats left to an integer it's not a major specifier
+	if _, err := strconv.Atoi(arg); err != nil {
+		return false
+	}
+
+	return true
+}
+
+// isExactSpecifier determines if the argument passed to it
+// is a valid exact version specifier (e.g. "-3.9")
+func isExactSpecifier(arg string) bool {
+	// If we don't start with a "-" it's not a major specifier
+	if !strings.HasPrefix(arg, "-") {
+		return false
+	}
+
+	// Remove the "-"
+	arg = arg[1:]
+
+	// Whats remaining needs to be "X.Y"
+	parts := strings.Split(arg, ".")
+	if len(parts) != 2 {
+		return false
+	}
+
+	major, minor := parts[0], parts[1]
+
+	// Both parts need to be an integer
+	if _, err := strconv.Atoi(major); err != nil {
+		return false
+	}
+
+	if _, err := strconv.Atoi(minor); err != nil {
+		return false
+	}
+
+	return true
 }

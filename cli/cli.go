@@ -152,7 +152,7 @@ func (a *App) LaunchREPL() error {
 	if err != nil {
 		return fmt.Errorf("error getting cwd: %w", err)
 	}
-	exe := getVenvDir(cwd)
+	exe := getVenvPython(cwd)
 	if exe != "" {
 		// Means we found a python interpreter inside .venv, so launch it
 		if err := launch(exe, []string{}); err != nil {
@@ -191,6 +191,72 @@ func (a *App) LaunchLatest() error {
 	return nil
 }
 
+// LaunchMajor will search through $PATH, find the latest python interpreter
+// satisfying the constraint imposed by 'major' version passed
+func (a *App) LaunchMajor(major int) error {
+	path, err := interpreter.GetPath(pathEnvKey)
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+	interpreters, err := interpreter.GetAll(path)
+	if err != nil {
+		return fmt.Errorf("error fetching python interpreters: %w", err)
+	}
+
+	// Create and populate a list of all the python interpreters that
+	// satisfy the specify major version
+	var supportingInterpreters interpreter.List
+	for _, python := range interpreters {
+		if python.SatisfiesMajor(major) {
+			supportingInterpreters = append(supportingInterpreters, python)
+		}
+	}
+
+	// Sort so the latest supporting interpreter is first
+	sort.Sort(supportingInterpreters)
+
+	latest := supportingInterpreters[0]
+
+	if err := launch(latest.Path, []string{}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// LaunchExact will search through $PATH, find the latest python interpreter
+// satisfying the constraint imposed by both 'major' and 'minor' version passed
+func (a *App) LaunchExact(major, minor int) error {
+	path, err := interpreter.GetPath(pathEnvKey)
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+	interpreters, err := interpreter.GetAll(path)
+	if err != nil {
+		return fmt.Errorf("error fetching python interpreters: %w", err)
+	}
+
+	// Create and populate a list of all the python interpreters that
+	// satisfy the specify major version
+	var supportingInterpreters interpreter.List
+	for _, python := range interpreters {
+		if python.SatisfiesExact(major, minor) {
+			supportingInterpreters = append(supportingInterpreters, python)
+		}
+	}
+
+	// Sort so the latest supporting interpreter is first
+	sort.Sort(supportingInterpreters)
+
+	latest := supportingInterpreters[0]
+
+	if err := launch(latest.Path, []string{}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // launch will launch a python interpreter at a specific (absolute) path
 // and forward any args to the called interpreter. If no args required
 // just pass an empty slice
@@ -204,17 +270,15 @@ func launch(path string, args []string) error {
 	return nil
 }
 
-// getVenvDir will walk up from cwd looking for a directory called ".venv"
-// it will then ensure this directory contains a "pyvenv.cfg", the marker
-// that this is indeed a python virtual environment, and then return the absolute
-// path to the venv's interpreter
+// getVenvPython will look for a ".venv/bin/python" under the cwd, ensure that it
+// exists and then return it's absolute path
 //
-// If no .venv dir is found, will return an empty string
-func getVenvDir(cwd string) string {
+// If .venv/bin/python does not exist, it will return an empty string
+func getVenvPython(cwd string) string {
 	// First look in the cwd, I imagine most of the time when searching for venvs
 	// we'll be in the root of a python project anyway so a lot of calls to this
 	// will exit here
-	if _, err := os.Stat(filepath.Join(cwd, venv)); errors.Is(err, fs.ErrNotExist) {
+	if _, err := os.Stat(filepath.Join(cwd, venv, "bin", "python")); errors.Is(err, fs.ErrNotExist) {
 		// The .venv dir does not exist, this is not an error
 		// but there is no interpreter path to return
 		return ""

@@ -199,8 +199,12 @@ func deDupe(paths []string) []string {
 	return deDuped
 }
 
-// GetPath looks up the $PATH environment variable and will return
-// each unique path in a string slice
+// GetPath looks up the environment variable given by 'key' and will return
+// each entry in a string slice.
+//
+// Entries will be de-duplicated prior to returning
+// to get the canonical $PATH environment variable, pass "PATH" as the 'key'
+// it is a passable argument primarily to easily facilitate testing
 func GetPath(key string) ([]string, error) {
 	path, ok := os.LookupEnv(key)
 	if !ok {
