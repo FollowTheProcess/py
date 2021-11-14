@@ -1,12 +1,12 @@
 package interpreter
 
 import (
+	"fmt"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"sort"
 	"testing"
-
-	"github.com/FollowTheProcess/py/internal/test"
 )
 
 func TestInterpreter_FromFilePath(t *testing.T) {
@@ -433,7 +433,7 @@ func BenchmarkInterpreterSort(b *testing.B) {
 }
 
 func Test_getPythonInterpreters(t *testing.T) {
-	root, err := test.GetProjectRoot()
+	root, err := getProjectRoot()
 	if err != nil {
 		t.Fatalf("could not get project root: %s", err)
 	}
@@ -481,7 +481,7 @@ func Test_getPythonInterpreters(t *testing.T) {
 }
 
 func TestGetAllPythonInterpreters(t *testing.T) {
-	root, err := test.GetProjectRoot()
+	root, err := getProjectRoot()
 	if err != nil {
 		t.Fatalf("could not get project root: %s", err)
 	}
@@ -625,7 +625,7 @@ func TestGetPath(t *testing.T) {
 }
 
 func BenchmarkGetAllPythonInterpreters(b *testing.B) {
-	root, err := test.GetProjectRoot()
+	root, err := getProjectRoot()
 	if err != nil {
 		b.Fatalf("could not get project root: %s", err)
 	}
@@ -721,4 +721,15 @@ func BenchmarkDeDupe(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		deDupe(paths)
 	}
+}
+
+// getProjectRoot is a convenience function for reliably getting the project root dir from anywhere
+// so that tests can make use of root-relative paths
+func getProjectRoot() (string, error) {
+	_, here, _, ok := runtime.Caller(0)
+	if !ok {
+		return "", fmt.Errorf("could not find current filepath")
+	}
+
+	return filepath.Join(filepath.Dir(here), "../.."), nil
 }
