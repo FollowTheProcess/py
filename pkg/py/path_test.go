@@ -298,12 +298,3 @@ func BenchmarkDeDupe(b *testing.B) {
 		deDupe(paths)
 	}
 }
-
-func isIn(needle string, haystack []string) bool {
-	for _, thing := range haystack {
-		if thing == needle {
-			return true
-		}
-	}
-	return false
-}
