@@ -20,6 +20,7 @@ var (
 
 const (
 	vitualEnvKey = "VIRTUAL_ENV" // The key for the python activated venv environment variable
+	pathEnvKey   = "PATH"        // The key for the os $PATH environment variable
 	helpText     = `
 Python launcher for Unix
 
@@ -97,14 +98,19 @@ func (a *App) Help() {
 
 // List is the handler for the list command
 func (a *App) List() error {
-	paths, err := py.GetPath()
+	paths, err := py.GetPath(pathEnvKey)
 	if err != nil {
-		return fmt.Errorf("could not get $PATH: %w", err)
+		return fmt.Errorf("%w", err)
 	}
 
 	found, err := py.GetAllPythonInterpreters(paths)
 	if err != nil {
 		return fmt.Errorf("error getting python interpreters: %w", err)
+	}
+
+	// Handle the case where the user does not have any pythons
+	if len(found) == 0 {
+		return fmt.Errorf("no python interpreters found on $PATH")
 	}
 
 	// Ensure interpreters are sorted latest to oldest regardless of
@@ -162,9 +168,9 @@ func (a *App) LaunchREPL() error {
 // LaunchLatest will search through $PATH, find the latest python interpreter
 // and launch it
 func (a *App) LaunchLatest() error {
-	path, err := py.GetPath()
+	path, err := py.GetPath(pathEnvKey)
 	if err != nil {
-		return fmt.Errorf("could not get $PATH: %w", err)
+		return fmt.Errorf("%w", err)
 	}
 	interpreters, err := py.GetAllPythonInterpreters(path)
 	if err != nil {
