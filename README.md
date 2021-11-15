@@ -5,17 +5,17 @@
 [![GitHub](https://img.shields.io/github/v/release/FollowTheProcess/py?logo=github&sort=semver)](https://github.com/FollowTheProcess/py)
 [![CI](https://github.com/FollowTheProcess/py/workflows/CI/badge.svg)](https://github.com/FollowTheProcess/py/actions?query=workflow%3ACI)
 
- (Approximate) port of Brett Cannon's [python-launcher] for Unix to Go.
+ (Approximate) port of Brett Cannon's [python-launcher] for Unix to Go, with a few tweaks 😉
 
 * Free software: MIT License
 
 ## Project Description
 
-This is primarily a learning exercise for now, you should use the original [python-launcher].
+This is primarily a learning/fun exercise for now, you should use the original [python-launcher].
 
 **Description of the original [python-launcher]:**
 
-> Taken directly from the official [README]
+*> Taken directly from the official [README]*
 
 Launch your Python interpreter the lazy/smart way!
 
@@ -57,6 +57,21 @@ not necessity.
 * I don't know, fun I guess?
 * I love the original [python-launcher] and I love Go, so why not combine them!
 * Learning and stuff
+
+### What's different about this one vs the original?
+
+Initially, I wanted to do a 100% pure port copying the functionality of the original [python-launcher] exactly.
+
+Then I realised that's boring and pointless because why wouldn't I just use the original? It's written really well, easy to understand,
+is fast to launch, 100% test coverage etc etc.
+
+So I thought why not tweak it a little bit?
+
+As a result, this version behaves slightly differently in a few ways:
+
+1. It won't let you do anything with `python2`, because it's deprecated and using it is naughty
+2. It won't climb the file tree looking for a `.venv` in any parent directory, it only looks in `cwd` (personally I only ever really use python in a virtual environment when I'm actively working on a python project, and 99% of the time for that I'm sitting in the project root where the `.venv` is anyway)
+3. The change above allows this one to easily support both virtual environments named `.venv` **and** `venv` (although `.venv` will be preferred)
 
 ## Installation
 

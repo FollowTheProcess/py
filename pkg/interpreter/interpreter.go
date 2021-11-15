@@ -140,8 +140,6 @@ func (il List) Swap(i, j int) {
 // GetAll looks under each path in `paths` for valid python
 // interpreters and returns the ones it finds
 //
-// A valid python interpreter in this context is any filepath with a base name
-// that starts with `python`
 // This is allowed in this context because in usage in this program, `paths` will
 // be populated by searching through $PATH, meaning we don't have to bother checking
 // if files are executable etc and $PATH is unlikely to be cluttered with random
@@ -157,7 +155,15 @@ func GetAll(paths []string) (List, error) {
 		interpreters = append(interpreters, found...)
 	}
 
-	return interpreters, nil
+	// Filter out python2
+	var python3s List
+	for _, intepreter := range interpreters {
+		if intepreter.SatisfiesMajor(3) {
+			python3s = append(python3s, intepreter)
+		}
+	}
+
+	return python3s, nil
 }
 
 // getPythonInterpreters accepts an absolute path to a directory under which
