@@ -10,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/FollowTheProcess/py/pkg/interpreter"
@@ -21,10 +23,11 @@ var (
 )
 
 const (
-	vitualEnvKey = "VIRTUAL_ENV" // The key for the python activated venv environment variable
-	pathEnvKey   = "PATH"        // The key for the os $PATH environment variable
-	venv         = ".venv"       // The name of the default venv dir
-	helpText     = `
+	vitualEnvKey   = "VIRTUAL_ENV" // The key for the python activated venv environment variable
+	pathEnvKey     = "PATH"        // The key for the os $PATH environment variable
+	pyPythonEnvKey = "PY_PYTHON"   // The key for py's default python environmant variable
+	venv           = ".venv"       // The name of the default venv dir
+	helpText       = `
 Python launcher for Unix
 
 Launch your python interpreter the lazy/smart way 🚀
@@ -127,22 +130,24 @@ func (a *App) List() error {
 	return nil
 }
 
-// LaunchREPL will follow py's control flow and launch whatever is the most appropriate python REPL
-// this is what gets called when `py` is called with 0 arguments
-// Control flow is:
+// Launch will follow py's control flow and launch whatever is the most appropriate python
+// any arguments specified in 'args' will be passed through to the found python
+// Control flow for no args is:
 // 	1) Activated virtual environment
 // 	2) .venv directory
 // 	3) PY_PYTHON env variable
 // 	4) Latest version on $PATH
-func (a *App) LaunchREPL() error {
+func (a *App) Launch(args []string) error {
 	// Here we follow the control flow specified, returning to the caller
 	// on the first matched condition, thus preventing later conditions
 	// from evaluating. This ensures our order of priority is followed
 
-	// Activated virtual environment
+	// Activated virtual environment, as marked by the presence of
+	// an environment variable $VIRTUAL_ENV pointing to the directory
+	// e.g. /Users/you/Projects/thisproject/.venv
 	if path := os.Getenv(vitualEnvKey); path != "" {
 		exe := filepath.Join(path, "bin", "python")
-		if err := launch(exe, []string{}); err != nil {
+		if err := launch(exe, args); err != nil {
 			return err
 		}
 		return nil
@@ -155,25 +160,33 @@ func (a *App) LaunchREPL() error {
 	}
 	exe := getVenvPython(cwd)
 	if exe != "" {
-		// Means we found a python interpreter inside .venv, so launch it
-		if err := launch(exe, []string{}); err != nil {
+		// Means we found a python interpreter inside .venv, so launch it and pass on any args
+		if err := launch(exe, args); err != nil {
 			return err
 		}
 		return nil
 	}
 
-	// PY_PYTHON env variable specifying a X.Y version identifier
-	// e.g. 3.10
-	// TODO: This
+	// PY_PYTHON env variable specifying a X.Y version identifier e.g. 3.10
+	if version := os.Getenv(pyPythonEnvKey); version != "" {
+		major, minor, err := parsePyPython(version)
+		if err != nil {
+			return err
+		}
+		// We're good to go
+		if err := a.LaunchExact(major, minor, args); err != nil {
+			return err
+		}
+		return nil
+	}
 
-	// Fallback, launch latest on $PATH with no args
-	if err := a.LaunchLatest([]string{}); err != nil {
+	// Fallback, launch latest on $PATH and pass the args through
+	if err := a.LaunchLatest(args); err != nil {
 		return err
 	}
 
 	// If we get here, user has no python so return an error
-
-	return nil
+	return fmt.Errorf("no python interpreters found after executing control flow")
 }
 
 // LaunchLatest will search through $PATH, find the latest python interpreter
@@ -318,4 +331,34 @@ func getVenvPython(cwd string) string {
 	// TODO: Also look for venv but prefer .venv
 
 	return filepath.Join(cwd, venv, "bin", "python")
+}
+
+// parsePyPython is a helper that, when given the value of a valid PY_PYTHON env variable
+// will return the integer major and minor version parts so we can launch it
+//
+// A valid value for PY_PYTHON is X.Y, the same as the exact version specifier
+// e.g. "3.10"
+//
+// If 'version' is not a valid format, an error will be returned
+func parsePyPython(version string) (int, int, error) {
+	parts := strings.Split(version, ".")
+
+	if len(parts) != 2 {
+		return 0, 0, fmt.Errorf("malformed PY_PYTHON: not X.Y format")
+	}
+
+	major, minor := parts[0], parts[1]
+
+	majorInt, err := strconv.Atoi(major)
+	if err != nil {
+		return 0, 0, fmt.Errorf("malformed PY_PYTHON: major component not an integer")
+	}
+
+	minorInt, err := strconv.Atoi(minor)
+	if err != nil {
+		return 0, 0, fmt.Errorf("malformed PY_PYTHON: minor component not an integer")
+	}
+
+	// Now we're safe
+	return majorInt, minorInt, nil
 }

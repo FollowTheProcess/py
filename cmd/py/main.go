@@ -33,8 +33,8 @@ func run(args []string) error {
 	// No arguments, means the user wants to launch a REPL
 	// follow control flow to find which version to launch
 	if n == 0 {
-		fmt.Println("0 arguments, launching REPL")
-		if err := app.LaunchREPL(); err != nil {
+		fmt.Println("0 arguments, following control flow to launch REPL")
+		if err := app.Launch([]string{}); err != nil {
 			return fmt.Errorf("%w", err)
 		}
 		return nil
@@ -83,16 +83,18 @@ func handleSingleArg(app *cli.App, arg string) error {
 
 	case isMajorSpecifier(arg):
 		// User has passed something like -3
-		fmt.Printf("Launching major REPL with argument: %s\n", arg)
+		fmt.Printf("Detected single arg: major version specifier: %s\n", arg)
 		major := parseMajorSpecifier(arg)
+		fmt.Printf("Launching REPL with major version: %d\n", major)
 		if err := app.LaunchMajor(major, []string{}); err != nil {
 			return fmt.Errorf("%w", err)
 		}
 
 	case isExactSpecifier(arg):
 		// User has passed something like -3.10
-		fmt.Printf("Launching exact REPL with argument: %s\n", arg)
+		fmt.Printf("Detected single arg: exact version specifier: %s\n", arg)
 		major, minor := parseExactSpecifier(arg)
+		fmt.Printf("Launching REPL with exact version: %d.%d\n", major, minor)
 		if err := app.LaunchExact(major, minor, []string{}); err != nil {
 			return fmt.Errorf("%w", err)
 		}
@@ -102,8 +104,8 @@ func handleSingleArg(app *cli.App, arg string) error {
 		// in which call python with the file as the argument
 		// TODO: This needs to follow the control flow too, currently just launches latest
 		// the additional control flow element here is we know it's a file, so look for a shebang
-		fmt.Printf("Launching latest python with arg: %s\n", arg)
-		if err := app.LaunchLatest([]string{arg}); err != nil {
+		fmt.Printf("Detected single unrecognised arg %s, following control flow and passing arg on\n", arg)
+		if err := app.Launch([]string{arg}); err != nil {
 			return fmt.Errorf("%w", err)
 		}
 	}
@@ -117,29 +119,32 @@ func handleSingleArg(app *cli.App, arg string) error {
 // 	2) Version specifier (-X or -X.Y): Launch matching version and pass all other args through
 // 	3) Unknown: Launch latest and pass all args through
 func handleMultipleArgs(app *cli.App, args []string) error {
-	switch arg := args[0]; {
-	case arg == "--help":
+	rest := args[1:]
+	switch first := args[0]; {
+	case first == "--help":
 		return fmt.Errorf("cannot use --help with any other arguments")
-	case arg == "--list":
+	case first == "--list":
 		return fmt.Errorf("cannot use --list with any other arguments")
-	case arg == "--version":
+	case first == "--version":
 		return fmt.Errorf("cannot use --version with any other arguments")
 
-	case isMajorSpecifier(arg):
-		// User has passed something like "py -3 arg"
-		fmt.Printf("Launching major version %s with args: %v\n", arg, args[1:])
-		major := parseMajorSpecifier(arg)
+	case isMajorSpecifier(first):
+		// User has passed something like "py -3 first ..."
+		fmt.Printf("Detected multiple args: first is major specifier: %s, rest are: %v\n", first, rest)
+		major := parseMajorSpecifier(first)
 		// Strip off the major version specifier and pass remaining args through
+		fmt.Printf("Launching major version %d with args: %v\n", major, rest)
 		if err := app.LaunchMajor(major, args[1:]); err != nil {
 			return fmt.Errorf("%w", err)
 		}
 
-	case isExactSpecifier(arg):
-		// User has passed something like "py -3.10 arg"
-		fmt.Printf("Launching exact version %s with args: %v\n", arg, args[1:])
-		major, minor := parseExactSpecifier(arg)
+	case isExactSpecifier(first):
+		// User has passed something like "py -3.10 first ..."
+		fmt.Printf("Detected multiple args: first is exact specifier: %s, rest are %v\n", first, rest)
+		major, minor := parseExactSpecifier(first)
 		// Strip off the exact version specifier and pass remaining args through
-		if err := app.LaunchExact(major, minor, args[1:]); err != nil {
+		fmt.Printf("Launching exact version %d.%d with args: %v\n", major, minor, rest)
+		if err := app.LaunchExact(major, minor, rest); err != nil {
 			return fmt.Errorf("%w", err)
 		}
 
@@ -147,8 +152,8 @@ func handleMultipleArgs(app *cli.App, args []string) error {
 		// If we get here it's unknown args
 		// in which case follow the control flow, launch the resulting python
 		// and pass all the arguments through
-		fmt.Printf("Launching latest with args: %v\n", args)
-		if err := app.LaunchLatest(args); err != nil {
+		fmt.Printf("Multiple arguments, first is unrecognised, following control flow passing args on: %v\n", args)
+		if err := app.Launch(args); err != nil {
 			return fmt.Errorf("%w", err)
 		}
 	}
