@@ -28,56 +28,123 @@ func run(args []string) error {
 
 	n := len(args)
 
-	// No args, follow control flow to find version of the REPL to launch
+	// No arguments, means the user wants to launch a REPL
+	// follow control flow to find which version to launch
 	if n == 0 {
+		fmt.Println("0 arguments, launching REPL")
 		if err := app.LaunchREPL(); err != nil {
 			return fmt.Errorf("%w", err)
 		}
 		return nil
 	}
 
-	// 1 arg, most of the work
-	// check if matches -X/-X.Y or a supported flag and handle it if it does
-	// if not, it could be a file (e.g. python script.py)
+	// We have a single command line argument which could mean several things:
+	// 1) known flag (e.g. --list)
+	// 2) version specifier of the form -X or -X.Y
+	// 3) file e.g. py script.py
 	if n == 1 {
-		switch arg := args[0]; {
-		case arg == "--help":
-			app.Help()
-
-		case arg == "--list":
-			if err := app.List(); err != nil {
-				return fmt.Errorf("%w", err)
-			}
-
-		case arg == "--version":
-			app.Version()
-
-		case isMajorSpecifier(arg):
-			major := parseMajorSpecifier(arg)
-			if err := app.LaunchMajor(major); err != nil {
-				return fmt.Errorf("%w", err)
-			}
-
-		case isExactSpecifier(arg):
-			major, minor := parseExactSpecifier(arg)
-			if err := app.LaunchExact(major, minor); err != nil {
-				return fmt.Errorf("%w", err)
-			}
-
-		default:
-			// TODO: Must be a single file if we're here?
-			// in which case, launch latest python and pass through all args
-			fmt.Printf("default case hit. Arg: %s\n", arg)
+		arg := args[0]
+		if err := handleSingleArg(app, arg); err != nil {
+			return err
 		}
-
 		return nil
 	}
 
-	// > 1 arg
-	// If first arg is -X/-X.Y start this python and pass all args through
-	// if not start latest $PATH python and pass all args through
-	fmt.Println("> 1 arg, if first matches -X/-X.Y, use this python and pass args through")
-	fmt.Println("if not, just pass all args through to latest $PATH python")
+	// If we get here we have more than 1 argument, which could mean a few things
+	// depending on what the first argument is:
+	// 1) Known flag: error out as they do not support arguments
+	// 2) Version specifier (-X or -X.Y): Launch matching version and pass all other args through
+	// 3) Unknown: Launch latest and pass all args through
+	if err := handleMultipleArgs(app, args); err != nil {
+		return err
+	}
+	return nil
+}
+
+// handleSingleArg handles the case where py is passed a single command line argument
+// which could mean several things:
+// 	1) known flag (e.g. --list)
+// 	2) version specifier of the form -X or -X.Y
+// 	3) file e.g. py script.py
+func handleSingleArg(app *cli.App, arg string) error {
+	switch {
+	case arg == "--help":
+		app.Help()
+
+	case arg == "--list":
+		if err := app.List(); err != nil {
+			return fmt.Errorf("%w", err)
+		}
+
+	case arg == "--version":
+		app.Version()
+
+	case isMajorSpecifier(arg):
+		// User has passed something like -3
+		fmt.Printf("Launching major REPL with argument: %s\n", arg)
+		major := parseMajorSpecifier(arg)
+		if err := app.LaunchMajor(major, []string{}); err != nil {
+			return fmt.Errorf("%w", err)
+		}
+
+	case isExactSpecifier(arg):
+		// User has passed something like -3.10
+		fmt.Printf("Launching exact REPL with argument: %s\n", arg)
+		major, minor := parseExactSpecifier(arg)
+		if err := app.LaunchExact(major, minor, []string{}); err != nil {
+			return fmt.Errorf("%w", err)
+		}
+
+	default:
+		// If we got here, the argument must be a file (e.g. py script.py)
+		// in which case launch the latest python with the file as the argument
+		fmt.Printf("Launching latest python with arg: %s\n", arg)
+		if err := app.LaunchLatest([]string{arg}); err != nil {
+			return fmt.Errorf("%w", err)
+		}
+	}
+
+	return nil
+}
+
+// handleMultipleArgs handles the case in which py was passed > 1 command line argument
+// which could mean a few things depending on what the first argument is:
+// 	1) Known flag: error out as they do not support arguments
+// 	2) Version specifier (-X or -X.Y): Launch matching version and pass all other args through
+// 	3) Unknown: Launch latest and pass all args through
+func handleMultipleArgs(app *cli.App, args []string) error {
+	switch arg := args[0]; {
+	case arg == "--help":
+		return fmt.Errorf("cannot use --help with any other arguments")
+	case arg == "--list":
+		return fmt.Errorf("cannot use --list with any other arguments")
+	case arg == "--version":
+		return fmt.Errorf("cannot use --version with any other arguments")
+
+	case isMajorSpecifier(arg):
+		// User has passed something like "py -3 arg"
+		fmt.Printf("Launching major version %s with args: %v\n", arg, args)
+		major := parseMajorSpecifier(arg)
+		if err := app.LaunchMajor(major, args); err != nil {
+			return fmt.Errorf("%w", err)
+		}
+
+	case isExactSpecifier(arg):
+		// User has passed something like "py -3.10 arg"
+		fmt.Printf("Launching exact version %s with args: %v\n", arg, args)
+		major, minor := parseExactSpecifier(arg)
+		if err := app.LaunchExact(major, minor, args); err != nil {
+			return fmt.Errorf("%w", err)
+		}
+
+	default:
+		// If we get here it's random args so just launch latest and pass
+		// all args through
+		fmt.Printf("Launching latest with args: %v\n", args)
+		if err := app.LaunchLatest(args); err != nil {
+			return fmt.Errorf("%w", err)
+		}
+	}
 
 	return nil
 }
