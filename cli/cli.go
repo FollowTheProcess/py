@@ -128,6 +128,7 @@ func (a *App) List() error {
 }
 
 // LaunchREPL will follow py's control flow and launch whatever is the most appropriate python REPL
+// this is what gets called when `py` is called with 0 arguments
 // Control flow is:
 // 	1) Activated virtual environment
 // 	2) .venv directory
@@ -165,8 +166,8 @@ func (a *App) LaunchREPL() error {
 	// e.g. 3.10
 	// TODO: This
 
-	// Fallback, launch latest on $PATH
-	if err := a.LaunchLatest(); err != nil {
+	// Fallback, launch latest on $PATH with no args
+	if err := a.LaunchLatest([]string{}); err != nil {
 		return err
 	}
 
@@ -174,8 +175,8 @@ func (a *App) LaunchREPL() error {
 }
 
 // LaunchLatest will search through $PATH, find the latest python interpreter
-// and launch it
-func (a *App) LaunchLatest() error {
+// and launch it, with optional arguments provided
+func (a *App) LaunchLatest(args []string) error {
 	path, err := interpreter.GetPath(pathEnvKey)
 	if err != nil {
 		return fmt.Errorf("%w", err)
@@ -189,7 +190,7 @@ func (a *App) LaunchLatest() error {
 
 	latest := interpreters[0]
 
-	if err := launch(latest.Path, []string{}); err != nil {
+	if err := launch(latest.Path, args); err != nil {
 		return err
 	}
 
@@ -198,7 +199,7 @@ func (a *App) LaunchLatest() error {
 
 // LaunchMajor will search through $PATH, find the latest python interpreter
 // satisfying the constraint imposed by 'major' version passed
-func (a *App) LaunchMajor(major int) error {
+func (a *App) LaunchMajor(major int, args []string) error {
 	path, err := interpreter.GetPath(pathEnvKey)
 	if err != nil {
 		return fmt.Errorf("%w", err)
@@ -222,7 +223,7 @@ func (a *App) LaunchMajor(major int) error {
 
 	latest := supportingInterpreters[0]
 
-	if err := launch(latest.Path, []string{}); err != nil {
+	if err := launch(latest.Path, args); err != nil {
 		return err
 	}
 
@@ -231,7 +232,7 @@ func (a *App) LaunchMajor(major int) error {
 
 // LaunchExact will search through $PATH, find the latest python interpreter
 // satisfying the constraint imposed by both 'major' and 'minor' version passed
-func (a *App) LaunchExact(major, minor int) error {
+func (a *App) LaunchExact(major, minor int, args []string) error {
 	path, err := interpreter.GetPath(pathEnvKey)
 	if err != nil {
 		return fmt.Errorf("%w", err)
@@ -255,7 +256,7 @@ func (a *App) LaunchExact(major, minor int) error {
 
 	latest := supportingInterpreters[0]
 
-	if err := launch(latest.Path, []string{}); err != nil {
+	if err := launch(latest.Path, args); err != nil {
 		return err
 	}
 
