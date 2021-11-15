@@ -69,7 +69,7 @@ So I thought why not tweak it a little bit?
 
 As a result, this version behaves slightly differently in a few ways:
 
-1. It won't let you do anything with `python2`, because it's deprecated and using it is naughty
+1. It won't let you do anything with `python2`, because it's deprecated and using it is naughty! In fact, it completely ignores any python2 interpreters it finds, so if you use this `py` there is 0 chance of accidentally launching `python2`
 2. It won't climb the file tree looking for a `.venv` in any parent directory, it only looks in `cwd` (personally I only ever really use python in a virtual environment when I'm actively working on a python project, and 99% of the time for that I'm sitting in the project root where the `.venv` is anyway)
 3. The change above allows this one to easily support both virtual environments named `.venv` **and** `venv` (although `.venv` will be preferred)
 
