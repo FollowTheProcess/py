@@ -524,11 +524,6 @@ func TestGetAllPythonInterpreters(t *testing.T) {
 					Path:  filepath.Join(testDir, "pythonpath2", "python3.8"),
 				},
 				{
-					Major: 2,
-					Minor: 7,
-					Path:  filepath.Join(testDir, "pythonpath3", "python2.7"),
-				},
-				{
 					Major: 3,
 					Minor: 5,
 					Path:  filepath.Join(testDir, "pythonpath3", "python3.5"),

@@ -171,6 +171,8 @@ func (a *App) LaunchREPL() error {
 		return err
 	}
 
+	// If we get here, user has no python so return an error
+
 	return nil
 }
 
@@ -184,6 +186,11 @@ func (a *App) LaunchLatest(args []string) error {
 	interpreters, err := interpreter.GetAll(path)
 	if err != nil {
 		return fmt.Errorf("error fetching python interpreters: %w", err)
+	}
+
+	// Handle the case where none are found
+	if len(interpreters) == 0 {
+		return fmt.Errorf("no python interpreters found on $PATH")
 	}
 
 	sort.Sort(interpreters)
@@ -218,6 +225,11 @@ func (a *App) LaunchMajor(major int, args []string) error {
 		}
 	}
 
+	// Handle the case where none are found
+	if len(supportingInterpreters) == 0 {
+		return fmt.Errorf("no interpreters found supporting major version %d", major)
+	}
+
 	// Sort so the latest supporting interpreter is first
 	sort.Sort(supportingInterpreters)
 
@@ -249,6 +261,11 @@ func (a *App) LaunchExact(major, minor int, args []string) error {
 		if python.SatisfiesExact(major, minor) {
 			supportingInterpreters = append(supportingInterpreters, python)
 		}
+	}
+
+	// Handle the case where none are found
+	if len(supportingInterpreters) == 0 {
+		return fmt.Errorf("no interpreters found supporting exact version %d.%d", major, minor)
 	}
 
 	// Sort so the latest supporting interpreter is first
@@ -290,9 +307,7 @@ func getVenvPython(cwd string) string {
 		return ""
 	}
 
-	// TODO: Currently only looks in cwd which is fine for 90% cases
-	// the real python-launcher will walk up the file tree looking for .venv
-	// this is on the plan but let's just get this all working first
+	// TODO: Also look for venv but prefer .venv
 
 	return filepath.Join(cwd, venv, "bin", "python")
 }

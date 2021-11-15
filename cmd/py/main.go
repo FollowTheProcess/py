@@ -98,6 +98,8 @@ func handleSingleArg(app *cli.App, arg string) error {
 	default:
 		// If we got here, the argument must be a file (e.g. py script.py)
 		// in which case launch the latest python with the file as the argument
+		// FIXME: This isn't forwarding the arguments for some reason, we end up with a REPL
+		// meaning no args were passed to python
 		fmt.Printf("Launching latest python with arg: %s\n", arg)
 		if err := app.LaunchLatest([]string{arg}); err != nil {
 			return fmt.Errorf("%w", err)
