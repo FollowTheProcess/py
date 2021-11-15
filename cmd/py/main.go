@@ -9,6 +9,8 @@ import (
 	"github.com/FollowTheProcess/py/cli"
 )
 
+// TODO: Add a logger and support the PY_DEBUG environment variable
+
 func main() {
 	// Note: because we require passing a version specifier (e.g. -X or -X.Y)
 	// we can't use the stdlib flag or spf13 pflag packages as these will get
@@ -52,9 +54,9 @@ func run(args []string) error {
 
 	// If we get here we have more than 1 argument, which could mean a few things
 	// depending on what the first argument is:
-	// 1) Known flag: error out as they do not support arguments
+	// 1) Known flag: error out as they do not support additional arguments
 	// 2) Version specifier (-X or -X.Y): Launch matching version and pass all other args through
-	// 3) Unknown: Launch latest and pass all args through
+	// 3) Unknown: Follow control flow to find a python and pass all args through (also need to check for file)
 	if err := handleMultipleArgs(app, args); err != nil {
 		return err
 	}
@@ -97,9 +99,9 @@ func handleSingleArg(app *cli.App, arg string) error {
 
 	default:
 		// If we got here, the argument must be a file (e.g. py script.py)
-		// in which case launch the latest python with the file as the argument
-		// FIXME: This isn't forwarding the arguments for some reason, we end up with a REPL
-		// meaning no args were passed to python
+		// in which call python with the file as the argument
+		// TODO: This needs to follow the control flow too, currently just launches latest
+		// the additional control flow element here is we know it's a file, so look for a shebang
 		fmt.Printf("Launching latest python with arg: %s\n", arg)
 		if err := app.LaunchLatest([]string{arg}); err != nil {
 			return fmt.Errorf("%w", err)
@@ -125,23 +127,26 @@ func handleMultipleArgs(app *cli.App, args []string) error {
 
 	case isMajorSpecifier(arg):
 		// User has passed something like "py -3 arg"
-		fmt.Printf("Launching major version %s with args: %v\n", arg, args)
+		fmt.Printf("Launching major version %s with args: %v\n", arg, args[1:])
 		major := parseMajorSpecifier(arg)
-		if err := app.LaunchMajor(major, args); err != nil {
+		// Strip off the major version specifier and pass remaining args through
+		if err := app.LaunchMajor(major, args[1:]); err != nil {
 			return fmt.Errorf("%w", err)
 		}
 
 	case isExactSpecifier(arg):
 		// User has passed something like "py -3.10 arg"
-		fmt.Printf("Launching exact version %s with args: %v\n", arg, args)
+		fmt.Printf("Launching exact version %s with args: %v\n", arg, args[1:])
 		major, minor := parseExactSpecifier(arg)
-		if err := app.LaunchExact(major, minor, args); err != nil {
+		// Strip off the exact version specifier and pass remaining args through
+		if err := app.LaunchExact(major, minor, args[1:]); err != nil {
 			return fmt.Errorf("%w", err)
 		}
 
 	default:
-		// If we get here it's random args so just launch latest and pass
-		// all args through
+		// If we get here it's unknown args
+		// in which case follow the control flow, launch the resulting python
+		// and pass all the arguments through
 		fmt.Printf("Launching latest with args: %v\n", args)
 		if err := app.LaunchLatest(args); err != nil {
 			return fmt.Errorf("%w", err)

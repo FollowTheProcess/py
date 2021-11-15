@@ -287,7 +287,15 @@ func launch(path string, args []string) error {
 	// We must use syscall.Exec here as we must "swap" the process to python
 	// simply running a subprocess e.g. (os/exec), even without waiting
 	// for the subprocess to complete, will not work
-	if err := syscall.Exec(path, args, []string{}); err != nil {
+
+	// Note on syscall.Exec here as this was not obvious to me until I looked up
+	// https://pkg.go.dev/golang.org/x/sys@v0.0.0-20211113001501-0c823b97ae02/unix#Exec
+	// argv0 is the absolute path to the executable as expected
+	// argv is a string slice with the name of argv0 as the first element and the intended args as the rest
+	// so correct usage is something like syscall.Exec("/usr/bin/ls", "ls -l")
+	argv := []string{filepath.Base(path)}
+	argv = append(argv, args...)
+	if err := syscall.Exec(path, argv, []string{}); err != nil {
 		return fmt.Errorf("error launching %s: %w", path, err)
 	}
 	return nil
