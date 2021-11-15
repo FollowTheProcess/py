@@ -3,17 +3,14 @@
 package cli
 
 import (
-	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
-	"strings"
 	"syscall"
 
+	"github.com/FollowTheProcess/py/internal"
 	"github.com/FollowTheProcess/py/pkg/interpreter"
 )
 
@@ -25,8 +22,7 @@ var (
 const (
 	vitualEnvKey   = "VIRTUAL_ENV" // The key for the python activated venv environment variable
 	pathEnvKey     = "PATH"        // The key for the os $PATH environment variable
-	pyPythonEnvKey = "PY_PYTHON"   // The key for py's default python environmant variable
-	venv           = ".venv"       // The name of the default venv dir
+	pyPythonEnvKey = "PY_PYTHON"   // The key for py's default python environment variable
 	helpText       = `
 Python launcher for Unix
 
@@ -135,14 +131,15 @@ func (a *App) List() error {
 // Control flow for no args is:
 // 	1) Activated virtual environment
 // 	2) .venv directory
-// 	3) PY_PYTHON env variable
-// 	4) Latest version on $PATH
+// 	3) venv directory
+// 	4) PY_PYTHON env variable
+// 	5) Latest version on $PATH
 func (a *App) Launch(args []string) error {
 	// Here we follow the control flow specified, returning to the caller
 	// on the first matched condition, thus preventing later conditions
 	// from evaluating. This ensures our order of priority is followed
 
-	// Activated virtual environment, as marked by the presence of
+	// 1) Activated virtual environment, as marked by the presence of
 	// an environment variable $VIRTUAL_ENV pointing to the directory
 	// e.g. /Users/you/Projects/thisproject/.venv
 	if path := os.Getenv(vitualEnvKey); path != "" {
@@ -153,12 +150,12 @@ func (a *App) Launch(args []string) error {
 		return nil
 	}
 
-	// Directory called .venv in cwd
+	// 2) & 3) Directory called .venv or venv in cwd
 	cwd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("error getting cwd: %w", err)
 	}
-	exe := getVenvPython(cwd)
+	exe := internal.GetVenvPython(cwd)
 	if exe != "" {
 		// Means we found a python interpreter inside .venv, so launch it and pass on any args
 		if err := launch(exe, args); err != nil {
@@ -167,11 +164,11 @@ func (a *App) Launch(args []string) error {
 		return nil
 	}
 
-	// PY_PYTHON env variable specifying a X.Y version identifier e.g. 3.10
+	// 4) PY_PYTHON env variable specifying a X.Y version identifier e.g. 3.10
 	if version := os.Getenv(pyPythonEnvKey); version != "" {
-		major, minor, err := parsePyPython(version)
+		major, minor, err := internal.ParsePyPython(version)
 		if err != nil {
-			return err
+			return fmt.Errorf("%w", err)
 		}
 		// We're good to go
 		if err := a.LaunchExact(major, minor, args); err != nil {
@@ -180,7 +177,7 @@ func (a *App) Launch(args []string) error {
 		return nil
 	}
 
-	// Fallback, launch latest on $PATH and pass the args through
+	// 5) Launch latest on $PATH and pass the args through
 	if err := a.LaunchLatest(args); err != nil {
 		return err
 	}
@@ -312,53 +309,4 @@ func launch(path string, args []string) error {
 		return fmt.Errorf("error launching %s: %w", path, err)
 	}
 	return nil
-}
-
-// getVenvPython will look for a ".venv/bin/python" under the cwd, ensure that it
-// exists and then return it's absolute path
-//
-// If .venv/bin/python does not exist, it will return an empty string
-func getVenvPython(cwd string) string {
-	// First look in the cwd, I imagine most of the time when searching for venvs
-	// we'll be in the root of a python project anyway so a lot of calls to this
-	// will exit here
-	if _, err := os.Stat(filepath.Join(cwd, venv, "bin", "python")); errors.Is(err, fs.ErrNotExist) {
-		// The .venv dir does not exist, this is not an error
-		// but there is no interpreter path to return
-		return ""
-	}
-
-	// TODO: Also look for venv but prefer .venv
-
-	return filepath.Join(cwd, venv, "bin", "python")
-}
-
-// parsePyPython is a helper that, when given the value of a valid PY_PYTHON env variable
-// will return the integer major and minor version parts so we can launch it
-//
-// A valid value for PY_PYTHON is X.Y, the same as the exact version specifier
-// e.g. "3.10"
-//
-// If 'version' is not a valid format, an error will be returned
-func parsePyPython(version string) (int, int, error) {
-	parts := strings.Split(version, ".")
-
-	if len(parts) != 2 {
-		return 0, 0, fmt.Errorf("malformed PY_PYTHON: not X.Y format")
-	}
-
-	major, minor := parts[0], parts[1]
-
-	majorInt, err := strconv.Atoi(major)
-	if err != nil {
-		return 0, 0, fmt.Errorf("malformed PY_PYTHON: major component not an integer")
-	}
-
-	minorInt, err := strconv.Atoi(minor)
-	if err != nil {
-		return 0, 0, fmt.Errorf("malformed PY_PYTHON: minor component not an integer")
-	}
-
-	// Now we're safe
-	return majorInt, minorInt, nil
 }
