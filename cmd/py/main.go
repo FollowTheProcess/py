@@ -102,8 +102,8 @@ func handleSingleArg(app *cli.App, arg string) error {
 	default:
 		// If we got here, the argument must be a file (e.g. py script.py)
 		// in which call python with the file as the argument
-		// TODO: This needs to follow the control flow too, currently just launches latest
-		// the additional control flow element here is we know it's a file, so look for a shebang
+		// TODO: the additional control flow element here is it could be a file, so check and look for a shebang
+		// could also be a single python flag e.g. python -V for version info
 		fmt.Printf("Detected single unrecognised arg %s, following control flow and passing arg on\n", arg)
 		if err := app.Launch([]string{arg}); err != nil {
 			return fmt.Errorf("%w", err)
