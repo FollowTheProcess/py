@@ -60,6 +60,49 @@ func ParsePyPython(version string) (int, int, error) {
 	return majorInt, minorInt, nil
 }
 
+// ParseShebang takes a line of text (as read from a file) and returns
+// the string version of a python version it may represent
+//
+// If 'shebang' is not a valid shebang line, or if no python version is specified
+// an empty string will be returned. This is the signal to use the remaining control flow to
+// determine the appropriate python version to launch
+//
+// Example
+//
+// 	sh := ParseShebang("#!/usr/local/bin/python3.9")
+// 	fmt.Println(sh)
+// Output: "3.9"
+func ParseShebang(shebang string) string {
+	if !strings.HasPrefix(shebang, "#!") {
+		return ""
+	}
+
+	// Trim off the #!
+	shebang = strings.Replace(shebang, "#!", "", 1)
+
+	// Whitespace is allowed between #! and the path e.g. #! /usr/bin/python
+	shebang = strings.TrimSpace(shebang)
+
+	acceptedPaths := [4]string{
+		"python",
+		"/usr/bin/python",
+		"/usr/local/bin/python",
+		"/usr/bin/env python",
+	}
+
+	for _, path := range acceptedPaths {
+		if strings.HasPrefix(shebang, path) {
+			// Valid shebang, let's see if we can get a version
+			// from the end of 'path' e.g. /usr/bin/python3 -> 3
+			version := shebang[len(path):]
+			return version
+		}
+	}
+
+	return ""
+}
+
+// exists returns true if 'path' exists, else false
 func exists(path string) bool {
 	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
 		return false

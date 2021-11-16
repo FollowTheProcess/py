@@ -148,3 +148,90 @@ func TestParsePyPython(t *testing.T) {
 		})
 	}
 }
+
+func TestParseShebang(t *testing.T) {
+	tests := []struct {
+		name    string
+		shebang string
+		want    string
+	}{
+		{
+			name:    "python3 returns 3",
+			shebang: "#!/usr/bin/python3",
+			want:    "3",
+		},
+		{
+			name:    "python3.9 returns 3.9",
+			shebang: "#!/usr/bin/python3.9",
+			want:    "3.9",
+		},
+		{
+			name:    "python3.10 returns 3.10",
+			shebang: "#!/usr/bin/python3.10",
+			want:    "3.10",
+		},
+		{
+			name:    "python4.12 returns 4.12",
+			shebang: "#!/usr/bin/python4.12",
+			want:    "4.12",
+		},
+		{
+			name:    "no version returns nothing",
+			shebang: "#!/usr/bin/python",
+			want:    "",
+		},
+		{
+			name:    "no version returns nothing (local)",
+			shebang: "#!/usr/local/bin/python",
+			want:    "",
+		},
+		{
+			name:    "no version returns nothing (env)",
+			shebang: "#!/usr/bin/env python",
+			want:    "",
+		},
+		{
+			name:    "local 3.9 returns 3.9",
+			shebang: "#!/usr/local/bin/python3.9",
+			want:    "3.9",
+		},
+		{
+			name:    "env 3.9 returns 3.9",
+			shebang: "#!/usr/bin/env python3.9",
+			want:    "3.9",
+		},
+		{
+			name:    "local 4.12 returns 4.12",
+			shebang: "#!/usr/local/bin/python4.12",
+			want:    "4.12",
+		},
+		{
+			name:    "env 4.12 returns 4.12",
+			shebang: "#!/usr/bin/env python4.12",
+			want:    "4.12",
+		},
+		{
+			name:    "whitespace isn't counted",
+			shebang: "#! /usr/bin/env python3",
+			want:    "3",
+		},
+		{
+			name:    "no #! means no shebang",
+			shebang: "/usr/bin/python",
+			want:    "",
+		},
+		{
+			name:    "non valid path returns nothing",
+			shebang: "#!/somewhere/not/recognised/python",
+			want:    "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ParseShebang(tt.shebang); got != tt.want {
+				t.Errorf("got %s, wanted %s", got, tt.want)
+			}
+		})
+	}
+}

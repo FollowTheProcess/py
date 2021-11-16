@@ -9,7 +9,7 @@ import (
 	"github.com/FollowTheProcess/py/cli"
 )
 
-// TODO: Add a logger and support the PY_DEBUG environment variable
+// TODO: Add a logger and support the PYLAUNCH_DEBUG environment variable
 
 func main() {
 	// Note: because we require passing a version specifier (e.g. -X or -X.Y)
@@ -40,10 +40,8 @@ func run(args []string) error {
 		return nil
 	}
 
-	// We have a single command line argument which could mean several things:
-	// 1) known flag (e.g. --list)
-	// 2) version specifier of the form -X or -X.Y
-	// 3) file e.g. py script.py
+	// We have a single command line argument which could mean several things
+	// dispatch to handleSingleArg
 	if n == 1 {
 		arg := args[0]
 		if err := handleSingleArg(app, arg); err != nil {
@@ -53,10 +51,7 @@ func run(args []string) error {
 	}
 
 	// If we get here we have more than 1 argument, which could mean a few things
-	// depending on what the first argument is:
-	// 1) Known flag: error out as they do not support additional arguments
-	// 2) Version specifier (-X or -X.Y): Launch matching version and pass all other args through
-	// 3) Unknown: Follow control flow to find a python and pass all args through (also need to check for file)
+	// depending on what the first argument is, dispatch to handleMultipleArgs
 	if err := handleMultipleArgs(app, args); err != nil {
 		return err
 	}
@@ -67,7 +62,7 @@ func run(args []string) error {
 // which could mean several things:
 // 	1) known flag (e.g. --list)
 // 	2) version specifier of the form -X or -X.Y
-// 	3) file e.g. py script.py
+// 	3) file (e.g. py script.py)
 func handleSingleArg(app *cli.App, arg string) error {
 	switch {
 	case arg == "--help":
@@ -83,6 +78,7 @@ func handleSingleArg(app *cli.App, arg string) error {
 
 	case isMajorSpecifier(arg):
 		// User has passed something like -3
+		// TODO: Remove the debugging prints
 		fmt.Printf("Detected single arg: major version specifier: %s\n", arg)
 		major := parseMajorSpecifier(arg)
 		fmt.Printf("Launching REPL with major version: %d\n", major)
@@ -101,7 +97,7 @@ func handleSingleArg(app *cli.App, arg string) error {
 
 	default:
 		// If we got here, the argument must be a file (e.g. py script.py)
-		// in which call python with the file as the argument
+		// in which case call python with the file as the argument
 		// TODO: the additional control flow element here is it could be a file, so check and look for a shebang
 		// could also be a single python flag e.g. python -V for version info
 		fmt.Printf("Detected single unrecognised arg %s, following control flow and passing arg on\n", arg)
@@ -117,7 +113,7 @@ func handleSingleArg(app *cli.App, arg string) error {
 // which could mean a few things depending on what the first argument is:
 // 	1) Known flag: error out as they do not support arguments
 // 	2) Version specifier (-X or -X.Y): Launch matching version and pass all other args through
-// 	3) Unknown: Launch latest and pass all args through
+// 	3) Unknown: Follow control flow to find a python and pass all args through
 func handleMultipleArgs(app *cli.App, args []string) error {
 	rest := args[1:]
 	switch first := args[0]; {

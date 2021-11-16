@@ -100,7 +100,7 @@ func TestInterpreter_FromFilePath(t *testing.T) {
 			err := v.FromFilePath(tt.args.filepath)
 
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("Fromfilepath() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("Fromfilepath() error = %v, wantErr = %v", err, tt.wantErr)
 			}
 
 			if !reflect.DeepEqual(v, tt.want) {
@@ -379,59 +379,6 @@ func TestInterpreter_SatisfiesExact(t *testing.T) {
 	}
 }
 
-func BenchmarkInterpreterSort(b *testing.B) {
-	input := List(List{
-		{
-			Major: 3,
-			Minor: 7,
-		},
-		{
-			Major: 3,
-			Minor: 4,
-		},
-		{
-			Major: 2,
-			Minor: 7,
-		},
-		{
-			Major: 3,
-			Minor: 10,
-		},
-		{
-			Major: 4,
-			Minor: 1,
-		},
-		{
-			Major: 3,
-			Minor: 11,
-		},
-		{
-			Major: 4,
-			Minor: 0,
-		},
-		{
-			Major: 3,
-			Minor: 12,
-		},
-		{
-			Major: 4,
-			Minor: 10,
-		},
-		{
-			Major: 2,
-			Minor: 6,
-		},
-	})
-
-	// Reset prior to actually running the benchmark
-	// ensures we don't include the initialisation stuff
-	b.ResetTimer()
-
-	for n := 0; n < b.N; n++ {
-		sort.Sort(input)
-	}
-}
-
 func Test_getPythonInterpreters(t *testing.T) {
 	root, err := getProjectRoot()
 	if err != nil {
@@ -619,30 +566,6 @@ func TestGetPath(t *testing.T) {
 	}
 }
 
-func BenchmarkGetAllPythonInterpreters(b *testing.B) {
-	root, err := getProjectRoot()
-	if err != nil {
-		b.Fatalf("could not get project root: %s", err)
-	}
-	testDir := filepath.Join(root, "testdata", "pythonpaths")
-
-	paths := []string{
-		filepath.Join(testDir, "pythonpath1"),
-		filepath.Join(testDir, "pythonpath2"),
-		filepath.Join(testDir, "pythonpath3"),
-	}
-
-	// Reset prior to actually running the benchmark
-	// ensures we don't include the initialisation stuff
-	b.ResetTimer()
-
-	for n := 0; n < b.N; n++ {
-		if _, err := GetAll(paths); err != nil {
-			b.Fatalf("GetAllPythonInterpreters returned an error during benchmarking: %s", err)
-		}
-	}
-}
-
 func Test_deDupe(t *testing.T) {
 	type args struct {
 		paths []string
@@ -679,6 +602,83 @@ func Test_deDupe(t *testing.T) {
 				t.Errorf("deDupe() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func BenchmarkGetAllPythonInterpreters(b *testing.B) {
+	root, err := getProjectRoot()
+	if err != nil {
+		b.Fatalf("could not get project root: %s", err)
+	}
+	testDir := filepath.Join(root, "testdata", "pythonpaths")
+
+	paths := []string{
+		filepath.Join(testDir, "pythonpath1"),
+		filepath.Join(testDir, "pythonpath2"),
+		filepath.Join(testDir, "pythonpath3"),
+	}
+
+	// Reset prior to actually running the benchmark
+	// ensures we don't include the initialisation stuff
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		if _, err := GetAll(paths); err != nil {
+			b.Fatalf("GetAllPythonInterpreters returned an error during benchmarking: %s", err)
+		}
+	}
+}
+
+func BenchmarkInterpreterSort(b *testing.B) {
+	input := List(List{
+		{
+			Major: 3,
+			Minor: 7,
+		},
+		{
+			Major: 3,
+			Minor: 4,
+		},
+		{
+			Major: 2,
+			Minor: 7,
+		},
+		{
+			Major: 3,
+			Minor: 10,
+		},
+		{
+			Major: 4,
+			Minor: 1,
+		},
+		{
+			Major: 3,
+			Minor: 11,
+		},
+		{
+			Major: 4,
+			Minor: 0,
+		},
+		{
+			Major: 3,
+			Minor: 12,
+		},
+		{
+			Major: 4,
+			Minor: 10,
+		},
+		{
+			Major: 2,
+			Minor: 6,
+		},
+	})
+
+	// Reset prior to actually running the benchmark
+	// ensures we don't include the initialisation stuff
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		sort.Sort(input)
 	}
 }
 
