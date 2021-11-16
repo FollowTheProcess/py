@@ -3,14 +3,17 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
+	"strings"
 	"syscall"
 
-	"github.com/FollowTheProcess/py/internal"
 	"github.com/FollowTheProcess/py/pkg/interpreter"
 	"github.com/sirupsen/logrus"
 )
@@ -131,7 +134,7 @@ func (a *App) List() error {
 	sort.Sort(found)
 
 	for _, interpreter := range found {
-		fmt.Fprintln(a.Out, interpreter)
+		fmt.Fprintln(a.Out, interpreter.ToString())
 	}
 
 	return nil
@@ -171,7 +174,7 @@ func (a *App) Launch(args []string) error {
 	if err != nil {
 		return fmt.Errorf("error getting cwd: %w", err)
 	}
-	exe := internal.GetVenvPython(cwd)
+	exe := a.getVenvPython(cwd)
 	if exe != "" {
 		// Means we found a python interpreter inside .venv, so launch it and pass on any args
 		a.Logger.WithField("interpreter", exe).Debugln("Launching python interpreter")
@@ -188,7 +191,7 @@ func (a *App) Launch(args []string) error {
 	a.Logger.Debugln("Looking for $PY_PYTHON environment variable")
 	if version := os.Getenv(pyPythonEnvKey); version != "" {
 		a.Logger.WithField("$PY_PYTHON", version).Debugln("Found environment variable")
-		major, minor, err := internal.ParsePyPython(version)
+		major, minor, err := a.parsePyPython(version)
 		if err != nil {
 			return fmt.Errorf("%w", err)
 		}
@@ -212,12 +215,15 @@ func (a *App) Launch(args []string) error {
 // LaunchLatest will search through $PATH, find the latest python interpreter
 // and launch it, with optional arguments provided
 func (a *App) LaunchLatest(args []string) error {
-	a.Logger.Debugln("Searching for latest python on $PATH")
-	path, err := interpreter.GetPath(pathEnvKey)
+	a.Logger.Debugln("Checking PATH environment variable")
+	paths, err := interpreter.GetPath(pathEnvKey)
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
-	interpreters, err := interpreter.GetAll(path)
+	a.Logger.Debugf("$PATH: %v\n", paths)
+
+	a.Logger.Debugln("Looking through PATH for python3 interpreters")
+	interpreters, err := interpreter.GetAll(paths)
 	if err != nil {
 		return fmt.Errorf("error fetching python interpreters: %w", err)
 	}
@@ -320,6 +326,98 @@ func (a *App) LaunchExact(major, minor int, args []string) error {
 	return nil
 }
 
+// getVenvPython will look for a ".venv/bin/python" or a "venv/bin/python"
+// under the cwd, ensure that it exists and then return it's absolute path
+// .venv will be preferred over venv, venv will only be used if .venv
+// does not exist.
+//
+// If neither is found, an empty string will be returned
+func (a *App) getVenvPython(cwd string) string {
+	dotVenv := filepath.Join(cwd, ".venv", "bin", "python")
+	venv := filepath.Join(cwd, "venv", "bin", "python")
+
+	switch {
+	case exists(dotVenv):
+		return dotVenv
+	case exists(venv):
+		return venv
+	default:
+		return ""
+	}
+}
+
+// parsePyPython is a helper that, when given the value of a valid PY_PYTHON env variable
+// will return the integer major and minor version parts so we can launch it
+//
+// A valid value for PY_PYTHON is X.Y, the same as the exact version specifier
+// e.g. "3.10"
+//
+// If 'version' is not a valid format, an error will be returned
+func (a *App) parsePyPython(version string) (int, int, error) {
+	parts := strings.Split(version, ".")
+
+	if len(parts) != 2 {
+		return 0, 0, fmt.Errorf("malformed PY_PYTHON: not X.Y format")
+	}
+
+	major, minor := parts[0], parts[1]
+
+	majorInt, err := strconv.Atoi(major)
+	if err != nil {
+		return 0, 0, fmt.Errorf("malformed PY_PYTHON: major component not an integer")
+	}
+
+	minorInt, err := strconv.Atoi(minor)
+	if err != nil {
+		return 0, 0, fmt.Errorf("malformed PY_PYTHON: minor component not an integer")
+	}
+
+	// Now we're safe
+	return majorInt, minorInt, nil
+}
+
+// parseShebang takes a line of text (as read from a file) and returns
+// the string version of a python version it may represent
+//
+// If 'shebang' is not a valid shebang line, or if no python version is specified
+// an empty string will be returned. This is the signal to use the remaining control flow to
+// determine the appropriate python version to launch
+//
+// Example
+//
+// 	sh := ParseShebang("#!/usr/local/bin/python3.9")
+// 	fmt.Println(sh)
+// Output: "3.9"
+func (a *App) parseShebang(shebang string) string {
+	if !strings.HasPrefix(shebang, "#!") {
+		return ""
+	}
+
+	// Trim off the #!
+	shebang = strings.Replace(shebang, "#!", "", 1)
+
+	// Whitespace is allowed between #! and the path e.g. #! /usr/bin/python
+	shebang = strings.TrimSpace(shebang)
+
+	acceptedPaths := [4]string{
+		"python",
+		"/usr/bin/python",
+		"/usr/local/bin/python",
+		"/usr/bin/env python",
+	}
+
+	for _, path := range acceptedPaths {
+		if strings.HasPrefix(shebang, path) {
+			// Valid shebang, let's see if we can get a version
+			// from the end of 'path' e.g. /usr/bin/python3 -> 3
+			version := shebang[len(path):]
+			return version
+		}
+	}
+
+	return ""
+}
+
 // launch will launch a python interpreter at a specific (absolute) path
 // and forward any args to the called interpreter. If no args required
 // just pass an empty slice
@@ -339,4 +437,12 @@ func launch(path string, args []string) error {
 		return fmt.Errorf("error launching %s: %w", path, err)
 	}
 	return nil
+}
+
+// exists returns true if 'path' exists, else false
+func exists(path string) bool {
+	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
+		return false
+	}
+	return true
 }

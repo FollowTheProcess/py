@@ -80,8 +80,18 @@ func (i *Interpreter) FromFilePath(path string) error {
 }
 
 // String satisfies the "stringer" interface and allows an `Interpreter`
-// to be pretty printed using fmt.Println
+// to be printed using fmt.Println, in this case showing the absolute path to the interpreter
 func (i Interpreter) String() string {
+	return fmt.Sprint(i.Path)
+}
+
+// ToString is the pretty print representation of an `Interpreter`
+//
+// Example
+// 	i := Interpreter{Major: 3, Minor: 10, Path:"/usr/bin/python3.10"}
+// 	fmt.Println(i.ToString())
+// Output: "3.10	│ /usr/bin/python3.10"
+func (i Interpreter) ToString() string {
 	// Note, the vertical bar character below is not the U+007C "Vertical Line" pipe character
 	// '|' but the U+2502 "Box Drawings Light Vertical" character '│'
 	// this is so, when printed it looks like a proper table
