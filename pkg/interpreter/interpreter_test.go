@@ -110,7 +110,7 @@ func TestInterpreter_FromFilePath(t *testing.T) {
 	}
 }
 
-func TestInterpreter_String(t *testing.T) {
+func TestInterpreter_ToString(t *testing.T) {
 	type fields struct {
 		Major int
 		Minor int
@@ -139,7 +139,7 @@ func TestInterpreter_String(t *testing.T) {
 				Minor: tt.fields.Minor,
 				Path:  tt.fields.Path,
 			}
-			if got := i.String(); got != tt.want {
+			if got := i.ToString(); got != tt.want {
 				t.Errorf("got %s, wanted %s", got, tt.want)
 			}
 		})
