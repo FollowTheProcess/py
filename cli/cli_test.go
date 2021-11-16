@@ -8,7 +8,7 @@ import (
 
 func TestAppVersion(t *testing.T) {
 	out := &bytes.Buffer{}
-	app := &App{Out: out}
+	app := &App{Stdout: out}
 
 	want := "py version: dev\ncommit: \n"
 	app.Version()
@@ -145,7 +145,7 @@ func TestParsePyPython(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			app := New()
+			app := &App{}
 			gotMajor, gotMinor, err := app.parsePyPython(tt.version)
 
 			if (err != nil) != tt.wantErr {
@@ -243,7 +243,7 @@ func TestParseShebang(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			app := New()
+			app := &App{}
 			if got := app.parseShebang(tt.shebang); got != tt.want {
 				t.Errorf("got %s, wanted %s", got, tt.want)
 			}

@@ -80,12 +80,12 @@ Flags:
 
 // App represents the py program
 type App struct {
-	Out    io.Writer
-	Logger *logrus.Logger
+	Stdout io.Writer      // Normal CLI output
+	Logger *logrus.Logger // The debug logger
 }
 
-// New creates a new default App configured to talk to os.Stdout
-func New() *App {
+// New creates a new default App writing to stdout and logging to stderr
+func New(stdout, stderr io.Writer) *App {
 	l := logrus.New()
 
 	// If the PYLAUNCH_DEBUG environment variable is set to anything
@@ -94,47 +94,41 @@ func New() *App {
 		l.Level = logrus.DebugLevel
 	}
 	l.Formatter = &logrus.TextFormatter{DisableLevelTruncation: true, DisableTimestamp: true}
+	l.Out = stderr
 
-	return &App{Out: os.Stdout, Logger: l}
+	return &App{Stdout: stdout, Logger: l}
 }
 
 // Version shows py's version information
 func (a *App) Version() {
-	fmt.Fprintf(a.Out, "py version: %s\n", version)
-	fmt.Fprintf(a.Out, "commit: %s\n", commit)
+	fmt.Fprintf(a.Stdout, "py version: %s\n", version)
+	fmt.Fprintf(a.Stdout, "commit: %s\n", commit)
 }
 
 // Help shows py's help text and usage info
 func (a *App) Help() {
-	fmt.Fprintln(a.Out, helpText)
+	fmt.Fprintln(a.Stdout, helpText)
 }
 
 // List is the handler for the list command
 func (a *App) List() error {
-	a.Logger.Debugln("Checking PATH environment variable")
-	paths, err := interpreter.GetPath(pathEnvKey)
+	interpreters, err := a.getAllPythonInterpreters()
 	if err != nil {
-		return fmt.Errorf("%w", err)
-	}
-	a.Logger.Debugf("$PATH: %v\n", paths)
-
-	a.Logger.Debugln("Looking through PATH for python3 interpreters")
-	found, err := interpreter.GetAll(paths)
-	if err != nil {
-		return fmt.Errorf("error getting python interpreters: %w", err)
+		return err
 	}
 
 	// Handle the case where the user does not have any pythons
-	if len(found) == 0 {
+	if len(interpreters) == 0 {
 		return fmt.Errorf("no python interpreters found on $PATH")
 	}
-
 	// Ensure interpreters are sorted latest to oldest regardless of
 	// any filepath based sorting from ReadDir
-	sort.Sort(found)
+	sort.Sort(interpreters)
 
-	for _, interpreter := range found {
-		fmt.Fprintln(a.Out, interpreter.ToString())
+	a.Logger.WithField("interpreters", interpreters).Debugln("Found python3 interpreters")
+
+	for _, interpreter := range interpreters {
+		fmt.Fprintln(a.Stdout, interpreter.ToString())
 	}
 
 	return nil
@@ -161,7 +155,7 @@ func (a *App) Launch(args []string) error {
 	if path := os.Getenv(vitualEnvKey); path != "" {
 		a.Logger.WithField("$VIRTUAL_ENV", path).Debugln("Found environment variable")
 		exe := filepath.Join(path, "bin", "python")
-		a.Logger.WithField("interpreter", exe).Debugln("Launching python interpreter")
+		a.Logger.WithFields(logrus.Fields{"interpreter": exe, "arguments": args}).Debugln("Launching python interpreter with arguments")
 		if err := launch(exe, args); err != nil {
 			return err
 		}
@@ -169,15 +163,17 @@ func (a *App) Launch(args []string) error {
 	}
 
 	// 2) & 3) Directory called .venv or venv in cwd
-	a.Logger.Debugln("Looking for a .venv or venv in cwd")
 	cwd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("error getting cwd: %w", err)
 	}
+
+	a.Logger.WithField("cwd", cwd).Debugln("Looking for virtual environment in cwd")
+
 	exe := a.getVenvPython(cwd)
 	if exe != "" {
 		// Means we found a python interpreter inside .venv, so launch it and pass on any args
-		a.Logger.WithField("interpreter", exe).Debugln("Launching python interpreter")
+		a.Logger.WithFields(logrus.Fields{"interpreter": exe, "arguments": args}).Debugln("Launching python interpreter with arguments")
 		if err := launch(exe, args); err != nil {
 			return err
 		}
@@ -215,17 +211,9 @@ func (a *App) Launch(args []string) error {
 // LaunchLatest will search through $PATH, find the latest python interpreter
 // and launch it, with optional arguments provided
 func (a *App) LaunchLatest(args []string) error {
-	a.Logger.Debugln("Checking PATH environment variable")
-	paths, err := interpreter.GetPath(pathEnvKey)
+	interpreters, err := a.getAllPythonInterpreters()
 	if err != nil {
-		return fmt.Errorf("%w", err)
-	}
-	a.Logger.Debugf("$PATH: %v\n", paths)
-
-	a.Logger.Debugln("Looking through PATH for python3 interpreters")
-	interpreters, err := interpreter.GetAll(paths)
-	if err != nil {
-		return fmt.Errorf("error fetching python interpreters: %w", err)
+		return err
 	}
 
 	// Handle the case where none are found
@@ -235,9 +223,11 @@ func (a *App) LaunchLatest(args []string) error {
 
 	sort.Sort(interpreters)
 
+	a.Logger.WithField("interpreters", interpreters).Debugln("Found python3 interpreters")
+
 	latest := interpreters[0]
 
-	a.Logger.WithField("latest", latest).Debugln("Launching latest python")
+	a.Logger.WithFields(logrus.Fields{"latest": latest, "arguments": args}).Debugln("Launching latest python with arguments")
 
 	if err := launch(latest.Path, args); err != nil {
 		return err
@@ -249,18 +239,14 @@ func (a *App) LaunchLatest(args []string) error {
 // LaunchMajor will search through $PATH, find the latest python interpreter
 // satisfying the constraint imposed by 'major' version passed
 func (a *App) LaunchMajor(major int, args []string) error {
-	a.Logger.WithField("major", major).Debugln("Searching for latest major version")
-	path, err := interpreter.GetPath(pathEnvKey)
+	a.Logger.WithField("major", major).Debugln("Searching for latest python with major version")
+	interpreters, err := a.getAllPythonInterpreters()
 	if err != nil {
-		return fmt.Errorf("%w", err)
-	}
-	interpreters, err := interpreter.GetAll(path)
-	if err != nil {
-		return fmt.Errorf("error fetching python interpreters: %w", err)
+		return err
 	}
 
 	// Create and populate a list of all the python interpreters that
-	// satisfy the specify major version
+	// satisfy the specified major version
 	var supportingInterpreters interpreter.List
 	for _, python := range interpreters {
 		if python.SatisfiesMajor(major) {
@@ -276,6 +262,8 @@ func (a *App) LaunchMajor(major int, args []string) error {
 	// Sort so the latest supporting interpreter is first
 	sort.Sort(supportingInterpreters)
 
+	a.Logger.WithField("matching interpreters", supportingInterpreters).Debugln("Found matching interpreters")
+
 	latest := supportingInterpreters[0]
 
 	a.Logger.WithField("interpreter", latest.Path).Debugln("Launching python")
@@ -289,14 +277,10 @@ func (a *App) LaunchMajor(major int, args []string) error {
 // LaunchExact will search through $PATH, find the latest python interpreter
 // satisfying the constraint imposed by both 'major' and 'minor' version passed
 func (a *App) LaunchExact(major, minor int, args []string) error {
-	a.Logger.Debugf("Searching for python %d.%d", major, minor)
-	path, err := interpreter.GetPath(pathEnvKey)
+	a.Logger.WithField("version", fmt.Sprintf("%d.%d", major, minor)).Debugln("Searching for exact python version")
+	interpreters, err := a.getAllPythonInterpreters()
 	if err != nil {
-		return fmt.Errorf("%w", err)
-	}
-	interpreters, err := interpreter.GetAll(path)
-	if err != nil {
-		return fmt.Errorf("error fetching python interpreters: %w", err)
+		return err
 	}
 
 	// Create and populate a list of all the python interpreters that
@@ -315,6 +299,8 @@ func (a *App) LaunchExact(major, minor int, args []string) error {
 
 	// Sort so the latest supporting interpreter is first
 	sort.Sort(supportingInterpreters)
+
+	a.Logger.WithField("matching interpreters", supportingInterpreters).Debugln("Found matching interpreters")
 
 	latest := supportingInterpreters[0]
 
@@ -338,8 +324,10 @@ func (a *App) getVenvPython(cwd string) string {
 
 	switch {
 	case exists(dotVenv):
+		a.Logger.WithField("venv dir", dotVenv).Debugln("Found a virtual environment")
 		return dotVenv
 	case exists(venv):
+		a.Logger.WithField("venv dir", venv).Debugln("Found a virtual environment")
 		return venv
 	default:
 		return ""
@@ -416,6 +404,25 @@ func (a *App) parseShebang(shebang string) string {
 	}
 
 	return ""
+}
+
+// getAllPythonInterpreters does exactly what it says on the tin
+// it searches through $PATH and returns a list of all python interpreters
+func (a *App) getAllPythonInterpreters() (interpreter.List, error) {
+	a.Logger.Debugln("Checking $PATH environment variable")
+	paths, err := interpreter.GetPath(pathEnvKey)
+	if err != nil {
+		return nil, fmt.Errorf("%w", err)
+	}
+	a.Logger.Debugf("$PATH: %v\n", paths)
+
+	a.Logger.Debugln("Looking through $PATH for python3 interpreters")
+	interpreters, err := interpreter.GetAll(paths)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching python interpreters: %w", err)
+	}
+
+	return interpreters, nil
 }
 
 // launch will launch a python interpreter at a specific (absolute) path

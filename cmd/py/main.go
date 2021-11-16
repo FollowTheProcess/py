@@ -7,9 +7,8 @@ import (
 	"strings"
 
 	"github.com/FollowTheProcess/py/cli"
+	"github.com/sirupsen/logrus"
 )
-
-// TODO: Add a logger and support the PYLAUNCH_DEBUG environment variable
 
 func main() {
 	// Note: because we require passing a version specifier (e.g. -X or -X.Y)
@@ -26,13 +25,14 @@ func main() {
 
 func run(args []string) error {
 	// Initialise the cli
-	app := cli.New()
+	app := cli.New(os.Stdout, os.Stderr)
 
 	n := len(args)
 
 	// No arguments, means the user wants to launch a REPL
 	// follow control flow to find which version to launch
 	if n == 0 {
+		app.Logger.Debugln("py called with 0 arguments, launching python REPL")
 		if err := app.Launch([]string{}); err != nil {
 			return fmt.Errorf("%w", err)
 		}
@@ -43,6 +43,7 @@ func run(args []string) error {
 	// dispatch to handleSingleArg
 	if n == 1 {
 		arg := args[0]
+		app.Logger.WithField("argument", arg).Debugln("py called with single argument")
 		if err := handleSingleArg(app, arg); err != nil {
 			return err
 		}
@@ -51,6 +52,7 @@ func run(args []string) error {
 
 	// If we get here we have more than 1 argument, which could mean a few things
 	// depending on what the first argument is, dispatch to handleMultipleArgs
+	app.Logger.WithField("arguments", args).Debugln("py called with multiple arguments")
 	if err := handleMultipleArgs(app, args); err != nil {
 		return err
 	}
@@ -78,6 +80,7 @@ func handleSingleArg(app *cli.App, arg string) error {
 	case isMajorSpecifier(arg):
 		// User has passed something like -3
 		major := parseMajorSpecifier(arg)
+		app.Logger.Debugln("Argument was major specifier")
 		if err := app.LaunchMajor(major, []string{}); err != nil {
 			return fmt.Errorf("%w", err)
 		}
@@ -85,6 +88,7 @@ func handleSingleArg(app *cli.App, arg string) error {
 	case isExactSpecifier(arg):
 		// User has passed something like -3.10
 		major, minor := parseExactSpecifier(arg)
+		app.Logger.Debugln("Argument was exact specifier")
 		if err := app.LaunchExact(major, minor, []string{}); err != nil {
 			return fmt.Errorf("%w", err)
 		}
@@ -94,6 +98,7 @@ func handleSingleArg(app *cli.App, arg string) error {
 		// in which case call python with the file as the argument
 		// TODO: the additional control flow element here is it could be a file, so check and look for a shebang
 		// could also be a single python flag e.g. python -V for version info
+		app.Logger.Debugln("Unrecognised argument. Launching python and passing argument through")
 		if err := app.Launch([]string{arg}); err != nil {
 			return fmt.Errorf("%w", err)
 		}
@@ -121,6 +126,7 @@ func handleMultipleArgs(app *cli.App, args []string) error {
 		// User has passed something like "py -3 first ..."
 		major := parseMajorSpecifier(first)
 		// Strip off the major version specifier and pass remaining args through
+		app.Logger.WithFields(logrus.Fields{"major specifier": first, "args": args[1:]}).Debugln("First arg was major specifier")
 		if err := app.LaunchMajor(major, args[1:]); err != nil {
 			return fmt.Errorf("%w", err)
 		}
@@ -129,6 +135,7 @@ func handleMultipleArgs(app *cli.App, args []string) error {
 		// User has passed something like "py -3.10 first ..."
 		major, minor := parseExactSpecifier(first)
 		// Strip off the exact version specifier and pass remaining args through
+		app.Logger.WithFields(logrus.Fields{"exact specifier": first, "args": args[1:]}).Debugln("First arg was exact specifier")
 		if err := app.LaunchExact(major, minor, rest); err != nil {
 			return fmt.Errorf("%w", err)
 		}
@@ -137,6 +144,7 @@ func handleMultipleArgs(app *cli.App, args []string) error {
 		// If we get here it's unknown args
 		// in which case follow the control flow, launch the resulting python
 		// and pass all the arguments through
+		app.Logger.WithField("arguments", args).Debugln("Unrecognised arguments")
 		if err := app.Launch(args); err != nil {
 			return fmt.Errorf("%w", err)
 		}
