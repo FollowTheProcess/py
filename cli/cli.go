@@ -12,6 +12,7 @@ import (
 
 	"github.com/FollowTheProcess/py/internal"
 	"github.com/FollowTheProcess/py/pkg/interpreter"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -20,9 +21,10 @@ var (
 )
 
 const (
-	vitualEnvKey   = "VIRTUAL_ENV" // The key for the python activated venv environment variable
-	pathEnvKey     = "PATH"        // The key for the os $PATH environment variable
-	pyPythonEnvKey = "PY_PYTHON"   // The key for py's default python environment variable
+	vitualEnvKey   = "VIRTUAL_ENV"    // The key for the python activated venv environment variable
+	pathEnvKey     = "PATH"           // The key for the os $PATH environment variable
+	debugEnvKey    = "PYLAUNCH_DEBUG" // The key for the env variable to trigger verbose logging
+	pyPythonEnvKey = "PY_PYTHON"      // The key for py's default python environment variable
 	helpText       = `
 Python launcher for Unix (The experimental Go port!)
 
@@ -75,12 +77,22 @@ Flags:
 
 // App represents the py program
 type App struct {
-	Out io.Writer
+	Out    io.Writer
+	Logger *logrus.Logger
 }
 
 // New creates a new default App configured to talk to os.Stdout
 func New() *App {
-	return &App{Out: os.Stdout}
+	l := logrus.New()
+
+	// If the PYLAUNCH_DEBUG environment variable is set to anything
+	// set logging level accordingly, otherwise leave at default (InfoLevel)
+	if debug := os.Getenv(debugEnvKey); debug != "" {
+		l.Level = logrus.DebugLevel
+	}
+	l.Formatter = &logrus.TextFormatter{DisableLevelTruncation: true, DisableTimestamp: true}
+
+	return &App{Out: os.Stdout, Logger: l}
 }
 
 // Version shows py's version information
@@ -96,11 +108,14 @@ func (a *App) Help() {
 
 // List is the handler for the list command
 func (a *App) List() error {
+	a.Logger.Debugln("Checking PATH environment variable")
 	paths, err := interpreter.GetPath(pathEnvKey)
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
+	a.Logger.Debugf("$PATH: %v\n", paths)
 
+	a.Logger.Debugln("Looking through PATH for python3 interpreters")
 	found, err := interpreter.GetAll(paths)
 	if err != nil {
 		return fmt.Errorf("error getting python interpreters: %w", err)
@@ -139,8 +154,11 @@ func (a *App) Launch(args []string) error {
 	// 1) Activated virtual environment, as marked by the presence of
 	// an environment variable $VIRTUAL_ENV pointing to the directory
 	// e.g. /Users/you/Projects/thisproject/.venv
+	a.Logger.Debugln("Looking for $VIRTUAL_ENV")
 	if path := os.Getenv(vitualEnvKey); path != "" {
+		a.Logger.WithField("$VIRTUAL_ENV", path).Debugln("Found environment variable")
 		exe := filepath.Join(path, "bin", "python")
+		a.Logger.WithField("interpreter", exe).Debugln("Launching python interpreter")
 		if err := launch(exe, args); err != nil {
 			return err
 		}
@@ -148,6 +166,7 @@ func (a *App) Launch(args []string) error {
 	}
 
 	// 2) & 3) Directory called .venv or venv in cwd
+	a.Logger.Debugln("Looking for a .venv or venv in cwd")
 	cwd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("error getting cwd: %w", err)
@@ -155,6 +174,7 @@ func (a *App) Launch(args []string) error {
 	exe := internal.GetVenvPython(cwd)
 	if exe != "" {
 		// Means we found a python interpreter inside .venv, so launch it and pass on any args
+		a.Logger.WithField("interpreter", exe).Debugln("Launching python interpreter")
 		if err := launch(exe, args); err != nil {
 			return err
 		}
@@ -165,7 +185,9 @@ func (a *App) Launch(args []string) error {
 	// TODO: Figure out how to implement a quick shebang check and get a version back out
 
 	// 5) PY_PYTHON env variable specifying a X.Y version identifier e.g. 3.10
+	a.Logger.Debugln("Looking for $PY_PYTHON environment variable")
 	if version := os.Getenv(pyPythonEnvKey); version != "" {
+		a.Logger.WithField("$PY_PYTHON", version).Debugln("Found environment variable")
 		major, minor, err := internal.ParsePyPython(version)
 		if err != nil {
 			return fmt.Errorf("%w", err)
@@ -178,6 +200,7 @@ func (a *App) Launch(args []string) error {
 	}
 
 	// 6) Launch latest on $PATH and pass the args through
+	a.Logger.Debugln("Falling back to latest python on $PATH")
 	if err := a.LaunchLatest(args); err != nil {
 		return err
 	}
@@ -189,6 +212,7 @@ func (a *App) Launch(args []string) error {
 // LaunchLatest will search through $PATH, find the latest python interpreter
 // and launch it, with optional arguments provided
 func (a *App) LaunchLatest(args []string) error {
+	a.Logger.Debugln("Searching for latest python on $PATH")
 	path, err := interpreter.GetPath(pathEnvKey)
 	if err != nil {
 		return fmt.Errorf("%w", err)
@@ -207,6 +231,8 @@ func (a *App) LaunchLatest(args []string) error {
 
 	latest := interpreters[0]
 
+	a.Logger.WithField("latest", latest).Debugln("Launching latest python")
+
 	if err := launch(latest.Path, args); err != nil {
 		return err
 	}
@@ -217,6 +243,7 @@ func (a *App) LaunchLatest(args []string) error {
 // LaunchMajor will search through $PATH, find the latest python interpreter
 // satisfying the constraint imposed by 'major' version passed
 func (a *App) LaunchMajor(major int, args []string) error {
+	a.Logger.WithField("major", major).Debugln("Searching for latest major version")
 	path, err := interpreter.GetPath(pathEnvKey)
 	if err != nil {
 		return fmt.Errorf("%w", err)
@@ -245,6 +272,7 @@ func (a *App) LaunchMajor(major int, args []string) error {
 
 	latest := supportingInterpreters[0]
 
+	a.Logger.WithField("interpreter", latest.Path).Debugln("Launching python")
 	if err := launch(latest.Path, args); err != nil {
 		return err
 	}
@@ -255,6 +283,7 @@ func (a *App) LaunchMajor(major int, args []string) error {
 // LaunchExact will search through $PATH, find the latest python interpreter
 // satisfying the constraint imposed by both 'major' and 'minor' version passed
 func (a *App) LaunchExact(major, minor int, args []string) error {
+	a.Logger.Debugf("Searching for python %d.%d", major, minor)
 	path, err := interpreter.GetPath(pathEnvKey)
 	if err != nil {
 		return fmt.Errorf("%w", err)
@@ -283,6 +312,7 @@ func (a *App) LaunchExact(major, minor int, args []string) error {
 
 	latest := supportingInterpreters[0]
 
+	a.Logger.WithField("python", latest.Path).Debugln("Launching exact python")
 	if err := launch(latest.Path, args); err != nil {
 		return err
 	}
