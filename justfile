@@ -35,7 +35,7 @@ test *flags: fmt
 
 # Run all project benchmarks
 bench: fmt
-    go test -bench=. {{ PROJECT_PATH }}/pkg/py -benchmem
+    go test ./... -bench=. -benchmem
 
 # Lint the project and auto-fix errors if possible
 lint: fmt

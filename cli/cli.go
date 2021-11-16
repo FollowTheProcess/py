@@ -24,7 +24,7 @@ const (
 	pathEnvKey     = "PATH"        // The key for the os $PATH environment variable
 	pyPythonEnvKey = "PY_PYTHON"   // The key for py's default python environment variable
 	helpText       = `
-Python launcher for Unix
+Python launcher for Unix (The experimental Go port!)
 
 Launch your python interpreter the lazy/smart way 🚀
 
@@ -36,7 +36,7 @@ want to use by looking in a few different places:
 
 1) Passed version as an argument
 2) An activated virtual environment
-3) A virtual environment in the current or parent directories
+3) A virtual environment in the current directory
 4) The shebang of the target file (if relevant)
 5) The latest version of python on $PATH
 
@@ -70,10 +70,6 @@ Flags:
   --help      Help for py
   --list      List all found python interpreters on $PATH
   --version   Show py's version info
-
-Note: This is not *the* python launcher as in brettcannon/python-launcher,
-this is FollowTheProcess/python-launcher - an (approximate) port of the original
-to Go.
 `
 )
 
@@ -132,8 +128,9 @@ func (a *App) List() error {
 // 	1) Activated virtual environment
 // 	2) .venv directory
 // 	3) venv directory
-// 	4) PY_PYTHON env variable
-// 	5) Latest version on $PATH
+// 	4) Look for a python shebang line in the file (if we have a file
+// 	5) PY_PYTHON env variable
+// 	6) Latest version on $PATH
 func (a *App) Launch(args []string) error {
 	// Here we follow the control flow specified, returning to the caller
 	// on the first matched condition, thus preventing later conditions
@@ -164,7 +161,10 @@ func (a *App) Launch(args []string) error {
 		return nil
 	}
 
-	// 4) PY_PYTHON env variable specifying a X.Y version identifier e.g. 3.10
+	// 4) If first arg is a file, look for a python shebang line
+	// TODO: Figure out how to implement a quick shebang check and get a version back out
+
+	// 5) PY_PYTHON env variable specifying a X.Y version identifier e.g. 3.10
 	if version := os.Getenv(pyPythonEnvKey); version != "" {
 		major, minor, err := internal.ParsePyPython(version)
 		if err != nil {
@@ -177,7 +177,7 @@ func (a *App) Launch(args []string) error {
 		return nil
 	}
 
-	// 5) Launch latest on $PATH and pass the args through
+	// 6) Launch latest on $PATH and pass the args through
 	if err := a.LaunchLatest(args); err != nil {
 		return err
 	}
