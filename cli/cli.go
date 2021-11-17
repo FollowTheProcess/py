@@ -110,7 +110,7 @@ func (a *App) Help() {
 	fmt.Fprintln(a.Stdout, helpText)
 }
 
-// List is the handler for the list command
+// List shows a list of all python interpreters on $PATH, sorted latest to oldest
 func (a *App) List() error {
 	interpreters, err := a.getAllPythonInterpreters()
 	if err != nil {
@@ -140,7 +140,7 @@ func (a *App) List() error {
 // 	1) Activated virtual environment
 // 	2) .venv directory
 // 	3) venv directory
-// 	4) Look for a python shebang line in the file (if we have a file
+// 	4) Look for a python shebang line in the file (if we have a file)
 // 	5) PY_PYTHON env variable
 // 	6) Latest version on $PATH
 func (a *App) Launch(args []string) error {
@@ -209,7 +209,7 @@ func (a *App) Launch(args []string) error {
 }
 
 // LaunchLatest will search through $PATH, find the latest python interpreter
-// and launch it, with optional arguments provided
+// and launch it, passing through any arguments passed to it
 func (a *App) LaunchLatest(args []string) error {
 	interpreters, err := a.getAllPythonInterpreters()
 	if err != nil {
@@ -238,6 +238,7 @@ func (a *App) LaunchLatest(args []string) error {
 
 // LaunchMajor will search through $PATH, find the latest python interpreter
 // satisfying the constraint imposed by 'major' version passed
+// launch it, and pass through any arguments passed to it
 func (a *App) LaunchMajor(major int, args []string) error {
 	a.Logger.WithField("major", major).Debugln("Searching for latest python with major version")
 	interpreters, err := a.getAllPythonInterpreters()
@@ -276,6 +277,7 @@ func (a *App) LaunchMajor(major int, args []string) error {
 
 // LaunchExact will search through $PATH, find the latest python interpreter
 // satisfying the constraint imposed by both 'major' and 'minor' version passed
+// launch it, and pass through any args passed to it
 func (a *App) LaunchExact(major, minor int, args []string) error {
 	a.Logger.WithField("version", fmt.Sprintf("%d.%d", major, minor)).Debugln("Searching for exact python version")
 	interpreters, err := a.getAllPythonInterpreters()
@@ -431,7 +433,7 @@ func (a *App) getAllPythonInterpreters() (interpreter.List, error) {
 func launch(path string, args []string) error {
 	// We must use syscall.Exec here as we must "swap" the process to python
 	// simply running a subprocess e.g. (os/exec), even without waiting
-	// for the subprocess to complete, will not work
+	// for the subprocess to complete, will not work as expected
 
 	// Note on syscall.Exec here as this was not obvious to me until I looked up
 	// https://pkg.go.dev/golang.org/x/sys@v0.0.0-20211113001501-0c823b97ae02/unix#Exec

@@ -24,39 +24,37 @@ func main() {
 }
 
 func run(args []string) error {
-	// Initialise the cli
 	app := cli.New(os.Stdout, os.Stderr)
 
-	n := len(args)
-
-	// No arguments, means the user wants to launch a REPL
-	// follow control flow to find which version to launch
-	if n == 0 {
+	switch len(args) {
+	case 0:
+		// No arguments, means the user wants to launch a REPL
+		// follow control flow to find which version to launch
 		app.Logger.Debugln("py called with 0 arguments, launching python REPL")
 		if err := app.Launch([]string{}); err != nil {
 			return fmt.Errorf("%w", err)
 		}
 		return nil
-	}
 
-	// We have a single command line argument which could mean several things
-	// dispatch to handleSingleArg
-	if n == 1 {
+	case 1:
+		// We have a single command line argument which could mean several things
+		// dispatch to handleSingleArg
 		arg := args[0]
 		app.Logger.WithField("argument", arg).Debugln("py called with single argument")
 		if err := handleSingleArg(app, arg); err != nil {
 			return err
 		}
 		return nil
-	}
 
-	// If we get here we have more than 1 argument, which could mean a few things
-	// depending on what the first argument is, dispatch to handleMultipleArgs
-	app.Logger.WithField("arguments", args).Debugln("py called with multiple arguments")
-	if err := handleMultipleArgs(app, args); err != nil {
-		return err
+	default:
+		// If we get here we have > 1 argument, which could also mean several things
+		// depending on what the first of these arguments is, dispatch to handleMultipleArgs
+		app.Logger.WithField("arguments", args).Debugln("py called with multiple arguments")
+		if err := handleMultipleArgs(app, args); err != nil {
+			return err
+		}
+		return nil
 	}
-	return nil
 }
 
 // handleSingleArg handles the case where py is passed a single command line argument
@@ -117,8 +115,10 @@ func handleMultipleArgs(app *cli.App, args []string) error {
 	switch first := args[0]; {
 	case first == "--help":
 		return fmt.Errorf("cannot use --help with any other arguments")
+
 	case first == "--list":
 		return fmt.Errorf("cannot use --list with any other arguments")
+
 	case first == "--version":
 		return fmt.Errorf("cannot use --version with any other arguments")
 
@@ -180,7 +180,7 @@ func isMajorSpecifier(arg string) bool {
 // parseMajorSpecifier takes in an argument we already know to be a major specifier
 // and returns the integer version.
 //
-// In the interest of performance, thisfunction assumes that 'arg' is already a valid
+// In the interest of performance, this function assumes that 'arg' is already a valid
 // major version specifier in string form
 func parseMajorSpecifier(arg string) int {
 	// Remove the "-"
@@ -228,7 +228,7 @@ func isExactSpecifier(arg string) bool {
 // and returns the integer representations.
 //
 // In the interest of performance, this function assumes that 'arg' is already a valid
-// minor version specifier in string form
+// exact version specifier in string form
 func parseExactSpecifier(arg string) (int, int) {
 	// Remove the "-"
 	arg = arg[1:]

@@ -1,3 +1,5 @@
+// Package interpreter implements useful utilites for getting, searching,
+// sorting and otherwise dealing with python interpreters on $PATH
 package interpreter
 
 import (
