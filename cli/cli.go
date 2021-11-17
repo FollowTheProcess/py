@@ -191,6 +191,7 @@ func (a *App) Launch(args []string) error {
 			if err := a.handlePotentialShebang(args); err != nil {
 				return err
 			}
+			// Note: we don't return nil here as we want to carry on the control flow
 		}
 	}
 
