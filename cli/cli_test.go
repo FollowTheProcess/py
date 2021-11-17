@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"os"
 	"testing"
+
+	"github.com/sirupsen/logrus"
 )
 
 func TestAppVersion(t *testing.T) {
@@ -243,7 +245,7 @@ func TestParseShebang(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			app := &App{}
+			app := &App{Stdout: os.Stdout, Logger: logrus.New()}
 			if got := app.parseShebang(tt.shebang); got != tt.want {
 				t.Errorf("got %s, wanted %s", got, tt.want)
 			}

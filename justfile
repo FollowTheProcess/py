@@ -27,7 +27,7 @@ build: tidy fmt
 
 # Compile the project and run with debugging on
 debug *args: build
-    PYLAUNCH_DEBUG=1 {{ PROJECT_BIN }}/{{ PROJECT_NAME }} {{ args }}
+    PY_PYTHON="" PYLAUNCH_DEBUG=1 {{ PROJECT_BIN }}/{{ PROJECT_NAME }} {{ args }}
 
 # Run go fmt on all project files
 fmt:
