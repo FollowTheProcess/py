@@ -1,6 +1,11 @@
 package main
 
-import "testing"
+import (
+	"bytes"
+	"testing"
+
+	"github.com/FollowTheProcess/py/cli"
+)
 
 func TestIsMajorSpecifier(t *testing.T) {
 	tests := []struct {
@@ -224,6 +229,68 @@ func TestParseExactSpecifier(t *testing.T) {
 			}
 			if minor != tt.wantMinor {
 				t.Errorf("minor version difference, got %d, wanted %d", minor, tt.wantMinor)
+			}
+		})
+	}
+}
+
+func TestCLIFlags(t *testing.T) {
+	tests := []struct {
+		name    string
+		args    []string
+		want    string
+		wantErr bool
+	}{
+		// Take care not to do anything here that starts a REPL
+		{
+			name:    "--list",
+			args:    []string{"--list"},
+			want:    "",
+			wantErr: false,
+		},
+		{
+			name:    "--list with extra arg",
+			args:    []string{"--list", "something"},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name:    "--help",
+			args:    []string{"--help"},
+			want:    "",
+			wantErr: false,
+		},
+		{
+			name:    "--help with extra arg",
+			args:    []string{"--help", "something"},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name:    "--version",
+			args:    []string{"--version"},
+			want:    "",
+			wantErr: false,
+		},
+		{
+			name:    "--version with extra arg",
+			args:    []string{"--version", "something"},
+			want:    "",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			appOut := &bytes.Buffer{}
+			appErr := &bytes.Buffer{}
+
+			app := cli.New(appOut, appErr)
+
+			err := run(app, tt.args)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("run() error = %v, wantErr = %v", err, tt.wantErr)
 			}
 		})
 	}

@@ -45,16 +45,15 @@ func main() {
 	// confused when passed a -3.9 for example
 	// So we handle everything as an argument and deal with the logic manually
 
-	// Run the program, passing all args (other than the binary name) to run
-	if err := run(os.Args[1:]); err != nil {
+	// Instantiate an 'app' and run the program, passing all args (other than the binary name) to run
+	app := cli.New(os.Stdout, os.Stderr)
+	if err := run(app, os.Args[1:]); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
 		os.Exit(1)
 	}
 }
 
-func run(args []string) error {
-	app := cli.New(os.Stdout, os.Stderr)
-
+func run(app *cli.App, args []string) error {
 	switch len(args) {
 	case 0:
 		// No arguments, means the user wants to launch a REPL
