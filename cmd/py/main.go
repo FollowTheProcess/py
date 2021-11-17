@@ -1,3 +1,32 @@
+/*
+py is an experimental port of Brett Cannon's original python-launcher to Go.
+
+The binary is meant to become the "go-to" command for launching a python
+interpreter whilst developing.
+
+It does this by trying to find the python interpreter that you most likely
+want to use by looking in a few different places:
+
+1) Passed version as an argument
+2) An activated virtual environment
+3) A virtual environment in the current directory
+4) The shebang of the target file (if relevant)
+5) The latest version of python on $PATH
+
+The full control flow can be found in the documentation.
+
+If py reaches the end of the list without finding a valid interpreter,
+it will exit with an error message.
+
+Differences from the original:
+
+1. It won't let you do anything with `python2`, because it's deprecated and using it is naughty! In fact, it completely ignores any python2 interpreters it finds, so if you use this `py` there is 0 chance of accidentally launching `python2`
+
+2. It won't climb the file tree looking for a `.venv` in any parent directory, it only looks in `cwd` (personally I only ever really use python in a virtual environment when I'm actively working on a python project, and 99% of the time for that I'm sitting in the project root where the `.venv` is anyway)
+
+3. The change above allows this one to easily support both virtual environments named `.venv` **and** `venv` (although `.venv` will be preferred)
+*/
+
 package main
 
 import (
@@ -34,7 +63,6 @@ func run(args []string) error {
 		if err := app.Launch([]string{}); err != nil {
 			return fmt.Errorf("%w", err)
 		}
-		return nil
 
 	case 1:
 		// We have a single command line argument which could mean several things
@@ -44,7 +72,6 @@ func run(args []string) error {
 		if err := handleSingleArg(app, arg); err != nil {
 			return err
 		}
-		return nil
 
 	default:
 		// If we get here we have > 1 argument, which could also mean several things
@@ -53,8 +80,9 @@ func run(args []string) error {
 		if err := handleMultipleArgs(app, args); err != nil {
 			return err
 		}
-		return nil
 	}
+
+	return nil
 }
 
 // handleSingleArg handles the case where py is passed a single command line argument
@@ -92,9 +120,8 @@ func handleSingleArg(app *cli.App, arg string) error {
 		}
 
 	default:
-		// If we got here, the argument must be a file (e.g. py script.py)
+		// If we got here, the argument could be a file (e.g. py script.py)
 		// in which case call python with the file as the argument
-		// TODO: the additional control flow element here is it could be a file, so check and look for a shebang
 		// could also be a single python flag e.g. python -V for version info
 		app.Logger.Debugln("Unrecognised argument. Launching python and passing argument through")
 		if err := app.Launch([]string{arg}); err != nil {

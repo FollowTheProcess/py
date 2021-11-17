@@ -3,12 +3,14 @@
 package cli
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -19,8 +21,10 @@ import (
 )
 
 var (
-	version = "dev" // py version, set at compile time by ldflags
-	commit  = ""    // py version's commit hash, set at compile time by ldflags
+	version    = "dev"                            // py version, set at compile time by ldflags
+	commit     = ""                               // py version's commit hash, set at compile time by ldflags
+	majorRegex = regexp.MustCompile(`^\d+$`)      // The regex for a single major version specifier in string form e.g "3"
+	exactRegex = regexp.MustCompile(`^\d+\.\d+$`) // The regex for an exact version specifier in string form e.g "3.9"
 )
 
 const (
@@ -181,7 +185,14 @@ func (a *App) Launch(args []string) error {
 	}
 
 	// 4) If first arg is a file, look for a python shebang line
-	// TODO: Figure out how to implement a quick shebang check and get a version back out
+	if len(args) == 1 {
+		if exists(args[0]) {
+			// We have a file as the argument
+			if err := a.handlePotentialShebang(args); err != nil {
+				return err
+			}
+		}
+	}
 
 	// 5) PY_PYTHON env variable specifying a X.Y version identifier e.g. 3.10
 	a.Logger.Debugln("Looking for $PY_PYTHON environment variable")
@@ -379,6 +390,7 @@ func (a *App) parsePyPython(version string) (int, int, error) {
 // 	fmt.Println(sh)
 // Output: "3.9"
 func (a *App) parseShebang(shebang string) string {
+	a.Logger.Debugln("Checking for a python shebang line")
 	if !strings.HasPrefix(shebang, "#!") {
 		return ""
 	}
@@ -400,7 +412,10 @@ func (a *App) parseShebang(shebang string) string {
 		if strings.HasPrefix(shebang, path) {
 			// Valid shebang, let's see if we can get a version
 			// from the end of 'path' e.g. /usr/bin/python3 -> 3
+			// /usr/bin/python3.9 -> 3.9
+			a.Logger.WithField("shebang", shebang).Debugln("Found python shebang line")
 			version := shebang[len(path):]
+			a.Logger.WithField("version", version).Debugln("Found potential python version in shebang line")
 			return version
 		}
 	}
@@ -425,6 +440,53 @@ func (a *App) getAllPythonInterpreters() (interpreter.List, error) {
 	}
 
 	return interpreters, nil
+}
+
+func (a *App) handlePotentialShebang(args []string) error {
+	a.Logger.WithField("argument", args[0]).Debugln("argument is a file")
+	file, err := os.Open(args[0])
+	if err != nil {
+		return fmt.Errorf("could not open %s: %w", args[0], err)
+	}
+	defer file.Close()
+
+	// Read the first line from the file
+	scanner := bufio.NewScanner(file)
+	scanner.Scan()
+
+	version := a.parseShebang(scanner.Text())
+
+	switch {
+	case majorRegex.MatchString(version):
+		// Shebang is a major version e.g. /usr/bin/python3
+		a.Logger.WithField("major version", version).Debugln("Shebang line refers to major version")
+		major, err := strconv.Atoi(version)
+		if err != nil {
+			return fmt.Errorf("shebang major version %v could not be parsed an integer", version)
+		}
+		if err := a.LaunchMajor(major, args); err != nil {
+			return err
+		}
+
+	case exactRegex.MatchString(version):
+		// Shebang is an exact version e.g. /usr/bin/python/3.9
+		// we can reuse the parsePyPython functionality here
+		a.Logger.WithField("exact version", version).Debugln("Shebang line refers to exact version")
+		major, minor, err := a.parsePyPython(version)
+		if err != nil {
+			return err
+		}
+		if err := a.LaunchExact(major, minor, args); err != nil {
+			return err
+		}
+
+	default:
+		// The shebang either wasn't valid or had no version identifier e.g. /usr/bin/python
+		// in which case, continue the control flow
+		a.Logger.WithField("version", version).Debugln("Unrecognised or missing version in shebang line, continuing control flow")
+	}
+
+	return nil
 }
 
 // launch will launch a python interpreter at a specific (absolute) path
