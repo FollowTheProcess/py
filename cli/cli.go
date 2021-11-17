@@ -60,7 +60,7 @@ Usage:
 
 Examples:
 
-# Launch the latest version of python on $PATH (or a virtual environment)
+# Follow the control flow and launch the python it finds
 $ py
 
 # Launch the latest python3 on $PATH
@@ -79,6 +79,10 @@ Flags:
   --help      Help for py
   --list      List all found python interpreters on $PATH
   --version   Show py's version info
+
+Environment Variables:
+  PY_PYTHON        The version of python you wish to be the default (e.g. "3.10")
+  PYLAUNCH_DEBUG   If set to anything will print debug information to stderr
 `
 )
 
@@ -470,7 +474,7 @@ func (a *App) handlePotentialShebang(args []string) error {
 		}
 
 	case exactRegex.MatchString(version):
-		// Shebang is an exact version e.g. /usr/bin/python/3.9
+		// Shebang is an exact version e.g. /usr/bin/python3.9
 		// we can reuse the parsePyPython functionality here
 		a.Logger.WithField("exact version", version).Debugln("Shebang line refers to exact version")
 		major, minor, err := a.parsePyPython(version)
