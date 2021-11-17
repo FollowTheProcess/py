@@ -25,7 +25,7 @@ tidy:
 build: tidy fmt
     go build -ldflags="-s -w -X {{ VERSION_LDFLAG }}=dev -X {{ COMMIT_LDFLAG }}={{ COMMIT_SHA }}" -o {{ PROJECT_BIN }}/{{ PROJECT_NAME }} {{ PROJECT_ENTRY_POINT }}
 
-# Compile the project and run `command` with debugging on
+# Compile the project and run with debugging on
 debug *args: build
     PYLAUNCH_DEBUG=1 {{ PROJECT_BIN }}/{{ PROJECT_NAME }} {{ args }}
 
