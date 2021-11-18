@@ -7,7 +7,7 @@ before:
 builds:
   - id: "py"
     dir: "."
-    main: ".cmd/py"
+    main: "./cmd/py"
     binary: "py"
     ldflags:
       - -s -w
