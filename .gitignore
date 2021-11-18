@@ -22,6 +22,9 @@ py
 *.out
 coverage.html
 
+# Output of profilers
+*.pprof
+
 # Dependency directories (remove the comment below to include it)
 # vendor/
 

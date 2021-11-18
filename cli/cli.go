@@ -29,7 +29,6 @@ var (
 
 const (
 	vitualEnvKey   = "VIRTUAL_ENV"    // The key for the python activated venv environment variable
-	pathEnvKey     = "PATH"           // The key for the os $PATH environment variable
 	debugEnvKey    = "PYLAUNCH_DEBUG" // The key for the env variable to trigger verbose logging
 	pyPythonEnvKey = "PY_PYTHON"      // The key for py's default python environment variable
 	helpText       = `
@@ -89,22 +88,27 @@ Environment Variables:
 // App represents the py program
 type App struct {
 	Stdout io.Writer      // Normal CLI output
+	Stderr io.Writer      // Where the logger and errors will write to
 	Logger *logrus.Logger // The debug logger
+	Path   string         // The path to search through i.e. $PATH, passable field to facilitate testing
 }
 
-// New creates a new default App writing to stdout and logging to stderr
+// New creates a new default App configured to write to 'stdout' and DEBUG log to 'stderr'
 func New(stdout, stderr io.Writer) *App {
-	l := logrus.New()
+	log := logrus.New()
+
+	// Get the value of $PATH
+	path := os.Getenv("PATH")
 
 	// If the PYLAUNCH_DEBUG environment variable is set to anything
 	// set logging level accordingly, otherwise leave at default (InfoLevel)
 	if debug := os.Getenv(debugEnvKey); debug != "" {
-		l.Level = logrus.DebugLevel
+		log.Level = logrus.DebugLevel
 	}
-	l.Formatter = &logrus.TextFormatter{DisableLevelTruncation: true, DisableTimestamp: true}
-	l.Out = stderr
+	log.Formatter = &logrus.TextFormatter{DisableLevelTruncation: true, DisableTimestamp: true}
+	log.Out = stderr
 
-	return &App{Stdout: stdout, Logger: l}
+	return &App{Stdout: stdout, Stderr: stderr, Logger: log, Path: path}
 }
 
 // Version shows py's version information
@@ -159,7 +163,7 @@ func (a *App) Launch(args []string) error {
 	// 1) Activated virtual environment, as marked by the presence of
 	// an environment variable $VIRTUAL_ENV pointing to the directory
 	// e.g. /Users/you/Projects/thisproject/.venv
-	a.Logger.Debugln("Looking for $VIRTUAL_ENV")
+	a.Logger.Debugln("Looking for $VIRTUAL_ENV environment variable")
 	if path := os.Getenv(vitualEnvKey); path != "" {
 		a.Logger.WithField("$VIRTUAL_ENV", path).Debugln("Found environment variable")
 		exe := filepath.Join(path, "bin", "python")
@@ -330,6 +334,28 @@ func (a *App) LaunchExact(major, minor int, args []string) error {
 	return nil
 }
 
+// getPath goes through a.Path (which it expects to be $PATH or similar)
+// i.e. separated list of directories, and returns a string slice of the
+// entries in that path.
+//
+// Entries will be de-duplicated prior to returning.
+func (a *App) getPathEntries() ([]string, error) {
+	paths := []string{}
+
+	for _, dir := range filepath.SplitList(a.Path) {
+		if dir == "" {
+			// Unix shell semantics: path element "" means "."
+			dir = "."
+		}
+		paths = append(paths, dir)
+	}
+
+	// Dedupe
+	paths = deDupe(paths)
+
+	return paths, nil
+}
+
 // getVenvPython will look for a ".venv/bin/python" or a "venv/bin/python"
 // under the cwd, ensure that it exists and then return it's absolute path
 // .venv will be preferred over venv, venv will only be used if .venv
@@ -432,7 +458,7 @@ func (a *App) parseShebang(shebang string) string {
 // it searches through $PATH and returns a list of all python interpreters
 func (a *App) getAllPythonInterpreters() (interpreter.List, error) {
 	a.Logger.Debugln("Checking $PATH environment variable")
-	paths, err := interpreter.GetPath(pathEnvKey)
+	paths, err := a.getPathEntries()
 	if err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}
@@ -521,4 +547,21 @@ func exists(path string) bool {
 		return false
 	}
 	return true
+}
+
+// deDupe takes in a list of paths (e.g. those returned from GetPath)
+// and returns a de-duplicated list
+// it is not that common to have a duplicated $PATH entry but it could happen
+// so let's handle it here
+func deDupe(paths []string) []string {
+	keys := make(map[string]bool)
+	deDuped := []string{}
+	for _, item := range paths {
+		if _, ok := keys[item]; !ok {
+			keys[item] = true
+			deDuped = append(deDuped, item)
+		}
+	}
+
+	return deDuped
 }

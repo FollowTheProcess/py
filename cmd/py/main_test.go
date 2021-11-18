@@ -243,12 +243,6 @@ func TestCLIFlags(t *testing.T) {
 	}{
 		// Take care not to do anything here that starts a REPL
 		{
-			name:    "--list",
-			args:    []string{"--list"},
-			want:    "",
-			wantErr: false,
-		},
-		{
 			name:    "--list with extra arg",
 			args:    []string{"--list", "something"},
 			want:    "",

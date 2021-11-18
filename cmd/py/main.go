@@ -45,7 +45,8 @@ func main() {
 	// confused when passed a -3.9 for example
 	// So we handle everything as an argument and deal with the logic manually
 
-	// Instantiate an 'app' and run the program, passing all args (other than the binary name) to run
+	// Instantiate an 'app', provide it with IO streams and $PATH
+	// then run the program, passing all args (other than the binary name) to run
 	app := cli.New(os.Stdout, os.Stderr)
 	if err := run(app, os.Args[1:]); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err)

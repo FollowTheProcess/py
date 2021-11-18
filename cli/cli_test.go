@@ -2,25 +2,118 @@ package cli
 
 import (
 	"bytes"
+	"fmt"
+	"io"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/sirupsen/logrus"
 )
 
-func TestAppVersion(t *testing.T) {
-	out := &bytes.Buffer{}
-	app := &App{Stdout: out}
+// newTestApp creates and returns a test App object configured to talk to 'out' and 'err'
+// with a mocked out $PATH, given by 'path'
+func newTestApp(out, err io.Writer, path string) *App {
+	return &App{
+		Stdout: out,
+		Stderr: err,
+		Path:   path,
+		Logger: logrus.New(), // Doesn't actually matter but it needs it to work
+	}
+}
+
+func TestApp_Version(t *testing.T) {
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	path := "" // Doesn't matter for version
+
+	app := newTestApp(stdout, stderr, path)
 
 	want := "py version: dev\ncommit: \n"
 	app.Version()
 
-	if got := out.String(); got != want {
+	if got := stdout.String(); got != want {
 		t.Errorf("got %s, wanted %s", got, want)
 	}
 }
 
-func TestExists(t *testing.T) {
+func TestApp_Help(t *testing.T) {
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	path := "" // Doesn't matter for help
+
+	app := newTestApp(stdout, stderr, path)
+
+	want := fmt.Sprintf("%s\n", helpText)
+	app.Help()
+
+	if got := stdout.String(); got != want {
+		t.Errorf("got %#v, wanted %#v", got, want)
+	}
+}
+
+func TestApp_getPathEntries(t *testing.T) {
+	tests := []struct {
+		name    string
+		key     string
+		path    string
+		want    []string
+		wantErr bool
+	}{
+		{
+			name:    "normal path",
+			path:    "/usr/bin:/usr/local/bin:/usr/local/somewhere",
+			want:    []string{"/usr/bin", "/usr/local/bin", "/usr/local/somewhere"},
+			wantErr: false,
+		},
+		{
+			name:    "empty",
+			path:    "",
+			want:    []string{},
+			wantErr: false,
+		},
+		{
+			name:    "duplicate entries",
+			path:    "/usr/bin:/usr/local/bin:/usr/bin:/usr/somewhere:/usr/local/bin",
+			want:    []string{"/usr/bin", "/usr/local/bin", "/usr/somewhere"},
+			wantErr: false,
+		},
+		{
+			name:    "empty entry should be replaced with .",
+			path:    "/usr/bin:/usr/local/bin::/usr/somewhere:",
+			want:    []string{"/usr/bin", "/usr/local/bin", ".", "/usr/somewhere"},
+			wantErr: false,
+		},
+		{
+			name:    "multiple empty entries should be one .",
+			path:    "/usr/bin::/usr/local/bin::/usr/somewhere:",
+			want:    []string{"/usr/bin", ".", "/usr/local/bin", "/usr/somewhere"},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Make the test App
+			stdout := &bytes.Buffer{}
+			stderr := &bytes.Buffer{}
+
+			app := newTestApp(stdout, stderr, tt.path)
+
+			// Get the value using the key specified in the test case
+			got, err := app.getPathEntries()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetPath() error = %v, wantErr = %v", err, tt.wantErr)
+			}
+
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("got %#v, wanted %#v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_exists(t *testing.T) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		t.Fatalf("could not get cwd")
@@ -51,7 +144,7 @@ func TestExists(t *testing.T) {
 	}
 }
 
-func TestParsePyPython(t *testing.T) {
+func Test_parsePyPython(t *testing.T) {
 	tests := []struct {
 		name      string
 		version   string
@@ -165,7 +258,7 @@ func TestParsePyPython(t *testing.T) {
 	}
 }
 
-func TestParseShebang(t *testing.T) {
+func Test_parseShebang(t *testing.T) {
 	tests := []struct {
 		name    string
 		shebang string
@@ -250,5 +343,80 @@ func TestParseShebang(t *testing.T) {
 				t.Errorf("got %s, wanted %s", got, tt.want)
 			}
 		})
+	}
+}
+
+func Test_deDupe(t *testing.T) {
+	type args struct {
+		paths []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			name: "only 1 path",
+			args: args{paths: []string{"its/just/me/here"}},
+			want: []string{"its/just/me/here"},
+		},
+		{
+			name: "3 different paths",
+			args: args{paths: []string{"a/path", "another/path", "athird/path"}},
+			want: []string{"a/path", "another/path", "athird/path"},
+		},
+		{
+			name: "1 unique, 2 duplicates",
+			args: args{paths: []string{"a/path", "a/path", "aunique/path"}},
+			want: []string{"a/path", "aunique/path"},
+		},
+		{
+			name: "all duplicates",
+			args: args{paths: []string{"a/path", "a/path", "a/path"}},
+			want: []string{"a/path"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := deDupe(tt.args.paths); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("deDupe() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+// Not really necessary but I was just curious and it was easy to do
+func Benchmark_deDupe(b *testing.B) {
+	// Some paths that contain duplicates
+	paths := []string{
+		"/usr/local/bin/python3.7",
+		"/usr/local/bin/python3.8",
+		"/usr/local/bin/python3.9",
+		"/usr/local/bin/python3.6",
+		"/usr/local/bin/python3.10",
+		"/usr/local/bin/python3.11",
+		"/usr/bin/python3.7",
+		"/usr/bin/python3.8",
+		"/usr/bin/python2.7",
+		"/usr/bin/python",
+		"/usr/bin/python2",
+		"/usr/bin/python3",
+		"/usr/bin/python2",
+		"/usr/bin/python",
+		"/usr/bin/python",
+		"/usr/bin/python",
+		"/usr/bin/python3",
+		"/usr/local/bin/python3.11",
+		"/usr/local/bin/python3.9",
+		"/usr/local/bin/python3.9",
+		"/usr/local/bin/python3.6",
+	}
+
+	// Reset prior to actually running the benchmark
+	// ensures we don't include the initialisation stuff
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		deDupe(paths)
 	}
 }
