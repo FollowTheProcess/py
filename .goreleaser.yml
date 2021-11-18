@@ -35,10 +35,13 @@ brews:
     homepage: "https://github.com/FollowTheProcess/py"
     description: "Approximate port of Brett Cannon's python-launcher to Go."
     license: "MIT License"
+    conflicts:
+      - "python-launcher"
     install: |
       bin.install "py"
+      man1.install "docs/man_page/py.1"
     test: |
-      "#{bin}/py version"
+      "#{bin}/py --version"
 
 archives:
   - replacements:

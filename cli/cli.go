@@ -473,6 +473,11 @@ func (a *App) getAllPythonInterpreters() (interpreter.List, error) {
 	return interpreters, nil
 }
 
+// handlePotentialShebang is called once we know the first argument is a file
+// it attempts to open the file, look for a shebang line, parse it
+// and launch the appropriate python interpreter
+// if it does not find a valid shebang line or there is no version found in it
+// it will return to signal the continuation of the control flow
 func (a *App) handlePotentialShebang(args []string) error {
 	a.Logger.WithField("argument", args[0]).Debugln("argument is a file")
 	file, err := os.Open(args[0])
