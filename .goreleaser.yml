@@ -41,7 +41,7 @@ brews:
       bin.install "py"
       man1.install "docs/man_page/py.1"
     test: |
-      "#{bin}/py version"
+      "#{bin}/py --version"
 
 archives:
   - replacements:
