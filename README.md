@@ -103,7 +103,7 @@ py -3.10 ...
 
 ## Control Flow
 
-As previously mentioned, this experiment port behaves slightly differently than the original [python-launcher]. The adjusted control flow diagram is shown below:
+As previously mentioned, this experimental port behaves slightly differently than the original [python-launcher]. The adjusted control flow diagram is shown below:
 
 ![control_flow](https://raw.githubusercontent.com/FollowTheProcess/py/main/docs/control_flow/control_flow.svg)
 
