@@ -101,6 +101,29 @@ py -3 ...
 py -3.10 ...
 ```
 
+### Debugging
+
+If you want to see what `py` is doing to find your python, set the `PYLAUNCH_DEBUG` environment variable to 1 (or anything really, the value doesn't matter) before running `py`.
+
+You will see something like this:
+
+```shell
+PYLAUNCH_DEBUG=1 py -c "import sys; print(sys.executable)"
+DEBUG py called with multiple arguments             arguments="[-c import sys; print(sys.executable)]"
+DEBUG Unrecognised arguments                        arguments="[-c import sys; print(sys.executable)]"
+DEBUG Looking for $VIRTUAL_ENV environment variable
+DEBUG Looking for virtual environment in cwd        cwd=/Users/tomfleet/Development/py
+DEBUG Looking for $PY_PYTHON environment variable
+DEBUG Found environment variable                    $PY_PYTHON=3.10
+DEBUG Searching for exact python version            version=3.10
+DEBUG Checking $PATH environment variable
+DEBUG $PATH: [/Users/tomfleet/.pyenv/shims /Users/tomfleet/go/bin /Users/tomfleet/.local/bin /Users/tomfleet/.cargo/bin /usr/local/bin /usr/bin /bin /usr/sbin /sbin]
+DEBUG Looking through $PATH for python3 interpreters
+DEBUG Found matching interpreters                   matching interpreters="[/Users/tomfleet/.pyenv/shims/python3.10]"
+DEBUG Launching exact python                        python=/Users/tomfleet/.pyenv/shims/python3.10
+/Users/tomfleet/.pyenv/versions/3.10.0/bin/python3.10
+```
+
 ## Control Flow
 
 As previously mentioned, this experimental port behaves slightly differently than the original [python-launcher]. The adjusted control flow diagram is shown below:
@@ -110,3 +133,12 @@ As previously mentioned, this experimental port behaves slightly differently tha
 [python-launcher]: https://github.com/brettcannon/python-launcher
 [README]: https://github.com/brettcannon/python-launcher/blob/main/README.md
 [Github releases]: https://github.com/FollowTheProcess/py/releases
+
+## Benchmarks
+
+Although I've not made any special efforts to optimise `py`, it is very close to the original [python-launcher] in terms of performance:
+
+* **Left:** This version of `py`, written in Go
+* **Right:** The original [python-launcher] written in Rust
+
+![comparison](https://raw.githubusercontent.com/FollowTheProcess/py/main/docs/img/comp.png)
