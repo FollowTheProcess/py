@@ -39,7 +39,6 @@ brews:
       - "python-launcher"
     install: |
       bin.install "py"
-      man1.install "docs/man_page/py.1"
     test: |
       "#{bin}/py --version"
 
