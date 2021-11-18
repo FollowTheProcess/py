@@ -1,13 +1,28 @@
+# Project directories and files
+
+ROOT := justfile_directory()
+PROJECT_BIN := "./bin"
+GORELEASER_DIST := "./dist"
+COVERAGE_DATA := "./coverage.out"
+COVERAGE_HTML := "./coverage.html"
+
+# Go build stuff
+
 PROJECT_NAME := "py"
 PROJECT_PATH := "github.com/FollowTheProcess/py"
-PROJECT_BIN := "./bin"
 PROJECT_ENTRY_POINT := "./cmd/py"
-COVERAGE_DATA := "coverage.out"
-COVERAGE_HTML := "coverage.html"
-GORELEASER_DIST := "dist"
 COMMIT_SHA := `git rev-parse HEAD`
 VERSION_LDFLAG := PROJECT_PATH + "/cli.version"
 COMMIT_LDFLAG := PROJECT_PATH + "/cli.commit"
+
+# Docs
+
+DOT_FILE := join(ROOT, "docs", "control_flow", "control_flow.dot")
+DOT_FILE_NO_STEM := without_extension(DOT_FILE)
+DOT_SVG := DOT_FILE_NO_STEM + ".svg"
+DOT_PNG := DOT_FILE_NO_STEM + ".png"
+MAN_MD := join(ROOT, "docs", "man_page", "py.1.md")
+MAN_FILE := join(ROOT, "docs", "man_page", "py.1")
 
 # By default print the list of recipes
 _default:
@@ -64,11 +79,43 @@ clean:
 check: test lint
 
 # Run all recipes (other than clean) in a sensible order
-all: build test lint cover
+all: build test bench lint dot man
 
 # Print lines of code (for fun)
 sloc:
     find . -name "*.go" | xargs wc -l | sort -nr
+
+# Build the control flow diagram as a SVG
+_dot_svg:
+    dot -T "svg" -o {{ DOT_SVG }} {{ DOT_FILE }}
+
+# Build the control flow diagram as a PNG
+_dot_png:
+    dot -T "png" -o {{ DOT_PNG }} {{ DOT_FILE }}
+
+# Convert the markdown-formatted man page to the man file format
+_man-md:
+    pandoc {{ MAN_MD }} --standalone -t man -o {{ MAN_FILE }}
+
+# Build the man page
+man: _man-md
+    #!/usr/bin/env python3
+
+    import datetime
+    import pathlib
+
+    with open("{{ MAN_FILE }}", "r", encoding="utf-8") as file:
+        man_text = file.read()
+
+    new_man_text = man_text.replace(
+        "CURRENT_DATE", datetime.date.today().isoformat()
+    )
+
+    with open("{{ MAN_FILE }}", "w", encoding="utf-8") as file:
+        file.write(new_man_text)
+
+# Build the control flow diagram
+dot: _dot_svg _dot_png
 
 # Install the project on your machine
 install: uninstall build

@@ -11,11 +11,9 @@
 
 ## Project Description
 
-This is primarily a learning/fun exercise for now, you should use the original [python-launcher].
-
 **Description of the original [python-launcher]:**
 
-*> Taken directly from the official [README]*
+> *Taken directly from the official [README]*
 
 Launch your Python interpreter the lazy/smart way!
 
@@ -75,7 +73,40 @@ As a result, this version behaves slightly differently in a few ways:
 
 ## Installation
 
+There are binaries published in the [GitHub releases] section, and a homebrew formula:
+
+```shell
+brew tap FollowTheProcess/homebrew-tap
+
+brew install FollowTheProcess/homebrew-tap/py
+```
+
 ## Quickstart
+
+### Launch the most appropriate python
+
+```shell
+py ...
+```
+
+### Launch the latest python3 on `$PATH`
+
+```shell
+py -3 ...
+```
+
+### Launch an exact version
+
+```shell
+py -3.10 ...
+```
+
+## Control Flow
+
+As previously mentioned, this experiment port behaves slightly differently than the original [python-launcher]. The adjusted control flow diagram is shown below:
+
+![control_flow](https://raw.githubusercontent.com/FollowTheProcess/py/main/docs/control_flow/control_flow.svg)
 
 [python-launcher]: https://github.com/brettcannon/python-launcher
 [README]: https://github.com/brettcannon/python-launcher/blob/main/README.md
+[Github releases]: https://github.com/FollowTheProcess/py/releases
