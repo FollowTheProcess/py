@@ -260,18 +260,6 @@ func TestCLIFlags(t *testing.T) {
 			want:    "",
 			wantErr: true,
 		},
-		{
-			name:    "--version",
-			args:    []string{"--version"},
-			want:    "",
-			wantErr: false,
-		},
-		{
-			name:    "--version with extra arg",
-			args:    []string{"--version", "something"},
-			want:    "",
-			wantErr: true,
-		},
 	}
 
 	for _, tt := range tests {
