@@ -100,9 +100,6 @@ func handleSingleArg(app *cli.App, arg string) error {
 			return fmt.Errorf("%w", err)
 		}
 
-	case arg == "--version":
-		app.Version()
-
 	case isMajorSpecifier(arg):
 		// User has passed something like -3
 		major := parseMajorSpecifier(arg)
@@ -145,9 +142,6 @@ func handleMultipleArgs(app *cli.App, args []string) error {
 
 	case first == "--list":
 		return fmt.Errorf("cannot use --list with any other arguments")
-
-	case first == "--version":
-		return fmt.Errorf("cannot use --version with any other arguments")
 
 	case isMajorSpecifier(first):
 		// User has passed something like "py -3 first ..."

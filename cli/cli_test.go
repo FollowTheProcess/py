@@ -22,21 +22,6 @@ func newTestApp(out, err io.Writer, path string) *App {
 	}
 }
 
-func TestApp_Version(t *testing.T) {
-	stdout := &bytes.Buffer{}
-	stderr := &bytes.Buffer{}
-	path := "" // Doesn't matter for version
-
-	app := newTestApp(stdout, stderr, path)
-
-	want := "py version: dev\ncommit: \n"
-	app.Version()
-
-	if got := stdout.String(); got != want {
-		t.Errorf("got %s, wanted %s", got, want)
-	}
-}
-
 func TestApp_Help(t *testing.T) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}

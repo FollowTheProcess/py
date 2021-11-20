@@ -25,14 +25,11 @@ var (
 	commit     = ""                               // py version's commit hash, set at compile time by ldflags
 	majorRegex = regexp.MustCompile(`^\d+$`)      // The regex for a single major version specifier in string form e.g "3"
 	exactRegex = regexp.MustCompile(`^\d+\.\d+$`) // The regex for an exact version specifier in string form e.g "3.9"
-)
-
-const (
-	vitualEnvKey   = "VIRTUAL_ENV"    // The key for the python activated venv environment variable
-	debugEnvKey    = "PYLAUNCH_DEBUG" // The key for the env variable to trigger verbose logging
-	pyPythonEnvKey = "PY_PYTHON"      // The key for py's default python environment variable
-	helpText       = `
+	helpText   = fmt.Sprintf(`
 Python launcher for Unix (The experimental Go port!)
+
+Version: %s
+Commit: %s
 
 Launch your python interpreter the lazy/smart way 🚀
 
@@ -55,7 +52,7 @@ it will exit with an error message.
 
 Usage:
 
-  py [args] [flags]
+	py [args] [flags]
 
 Examples:
 
@@ -75,14 +72,20 @@ $ py -m venv .venv
 $ py --list
 
 Flags:
-  --help      Help for py
-  --list      List all found python interpreters on $PATH
-  --version   Show py's version info
+	--help      Help for py
+	--list      List all found python interpreters on $PATH
 
 Environment Variables:
-  PY_PYTHON        The version of python you wish to be the default (e.g. "3.10")
-  PYLAUNCH_DEBUG   If set to anything will print debug information to stderr
-`
+	PY_PYTHON        The version of python you wish to be the default (e.g. "3.10")
+	PYLAUNCH_DEBUG   If set to anything will print debug information to stderr
+	`, version, commit)
+)
+
+const (
+	vitualEnvKey   = "VIRTUAL_ENV"    // The key for the python activated venv environment variable
+	debugEnvKey    = "PYLAUNCH_DEBUG" // The key for the env variable to trigger verbose logging
+	pyPythonEnvKey = "PY_PYTHON"      // The key for py's default python environment variable
+
 )
 
 // App represents the py program
@@ -109,12 +112,6 @@ func New(stdout, stderr io.Writer) *App {
 	log.Out = stderr
 
 	return &App{Stdout: stdout, Stderr: stderr, Logger: log, Path: path}
-}
-
-// Version shows py's version information
-func (a *App) Version() {
-	fmt.Fprintf(a.Stdout, "py version: %s\n", version)
-	fmt.Fprintf(a.Stdout, "commit: %s\n", commit)
 }
 
 // Help shows py's help text and usage info
