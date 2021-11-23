@@ -50,9 +50,9 @@ func main() {
 	// then run the program, passing all args (other than the binary name) to run
 	app := cli.New(os.Stdout, os.Stderr)
 	if err := run(app, os.Args[1:]); err != nil {
-		prefix := color.RedString("error")
-		e := color.New(color.FgWhite).Add(color.Bold)
-		fmt.Fprintf(os.Stderr, "%s: %s\n", prefix, e.Sprint(err))
+		title := color.New(color.FgRed).Add(color.Bold)
+		msg := color.New(color.FgWhite).Add(color.Bold)
+		fmt.Fprintf(os.Stderr, "%s: %s\n", title.Sprint("error"), msg.Sprint(err))
 		os.Exit(1)
 	}
 }
