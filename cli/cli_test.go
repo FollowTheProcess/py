@@ -46,34 +46,29 @@ func TestApp_getPathEntries(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "normal path",
-			path:    "/usr/bin:/usr/local/bin:/usr/local/somewhere",
-			want:    []string{"/usr/bin", "/usr/local/bin", "/usr/local/somewhere"},
-			wantErr: false,
+			name: "normal path",
+			path: "/usr/bin:/usr/local/bin:/usr/local/somewhere",
+			want: []string{"/usr/bin", "/usr/local/bin", "/usr/local/somewhere"},
 		},
 		{
-			name:    "empty",
-			path:    "",
-			want:    []string{},
-			wantErr: false,
+			name: "empty",
+			path: "",
+			want: []string{},
 		},
 		{
-			name:    "duplicate entries",
-			path:    "/usr/bin:/usr/local/bin:/usr/bin:/usr/somewhere:/usr/local/bin",
-			want:    []string{"/usr/bin", "/usr/local/bin", "/usr/somewhere"},
-			wantErr: false,
+			name: "duplicate entries",
+			path: "/usr/bin:/usr/local/bin:/usr/bin:/usr/somewhere:/usr/local/bin",
+			want: []string{"/usr/bin", "/usr/local/bin", "/usr/somewhere"},
 		},
 		{
-			name:    "empty entry should be replaced with .",
-			path:    "/usr/bin:/usr/local/bin::/usr/somewhere:",
-			want:    []string{"/usr/bin", "/usr/local/bin", ".", "/usr/somewhere"},
-			wantErr: false,
+			name: "empty entry should be replaced with .",
+			path: "/usr/bin:/usr/local/bin::/usr/somewhere:",
+			want: []string{"/usr/bin", "/usr/local/bin", ".", "/usr/somewhere"},
 		},
 		{
-			name:    "multiple empty entries should be one .",
-			path:    "/usr/bin::/usr/local/bin::/usr/somewhere:",
-			want:    []string{"/usr/bin", ".", "/usr/local/bin", "/usr/somewhere"},
-			wantErr: false,
+			name: "multiple empty entries should be one .",
+			path: "/usr/bin::/usr/local/bin::/usr/somewhere:",
+			want: []string{"/usr/bin", ".", "/usr/local/bin", "/usr/somewhere"},
 		},
 	}
 
@@ -86,10 +81,7 @@ func TestApp_getPathEntries(t *testing.T) {
 			app := newTestApp(stdout, stderr, tt.path)
 
 			// Get the value using the key specified in the test case
-			got, err := app.getPathEntries()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetPath() error = %v, wantErr = %v", err, tt.wantErr)
-			}
+			got := app.getPathEntries()
 
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("got %#v, wanted %#v", got, tt.want)
