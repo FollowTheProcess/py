@@ -112,7 +112,7 @@ func (i Interpreter) SatisfiesExact(major, minor int) bool {
 	return i.Major == major && i.Minor == minor
 }
 
-// InterpreterList represents a list of python interpreters
+// List represents a list of python interpreters
 // and enables us to implement sorting which is how we tell which one is
 // the latest python version without relying on filesystem lexical order
 // which may not be deterministic
