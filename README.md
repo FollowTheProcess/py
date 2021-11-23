@@ -134,10 +134,10 @@ As previously mentioned, this experimental port behaves slightly differently tha
 
 Although I've not made any special efforts to optimise `py`, it is very close to the original [python-launcher] in terms of performance:
 
+![comparison](https://raw.githubusercontent.com/FollowTheProcess/py/main/docs/img/comp.png)
+
 * **Left:** This version of `py`, written in Go
 * **Right:** The original [python-launcher] written in Rust
-
-![comparison](https://raw.githubusercontent.com/FollowTheProcess/py/main/docs/img/comp.png)
 
 ## FAQ
 
@@ -161,8 +161,28 @@ detect_folders = [".venv"]
 By using the Launcher with Starship, your prompt will tell you which Python version will be used if you run `py`. Since the Launcher supports virtual
 environments, the prompt will properly reflect both what global install of Python will be used, but also the local virtual environment.
 
+### What about pyenv, does this version work with that too?
+
+**Short answer:** Again, yes!
+
+If you're using [pyenv] to manage your Python versions, you'll want to set the version the Launcher uses to the pyenv [global version].
+
+Add this line to your `.zshrc` or `.bashrc` file:
+
+```shell
+export PY_PYTHON=$(head -n 1 $(pyenv root)/version | cut -d "." -f 1,2)
+```
+
+Or this line to your `~/.config/fish/config.fish` file:
+
+```fish
+set -gx PY_PYTHON (head -n 1 (pyenv root)/version | cut -d "." -f 1,2)
+```
+
 [python-launcher]: https://github.com/brettcannon/python-launcher
 [README]: https://github.com/brettcannon/python-launcher/blob/main/README.md
 [Github releases]: https://github.com/FollowTheProcess/py/releases
 [Starship]: https://starship.rs/
 [Starship configuration file]: https://starship.rs/config/
+[pyenv]: https://github.com/pyenv/pyenv
+[global version]: https://github.com/pyenv/pyenv/blob/master/COMMANDS.md#pyenv-global
