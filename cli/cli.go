@@ -274,7 +274,7 @@ func (a *App) LaunchMajor(major int, args []string) error {
 
 	// Handle the case where none are found
 	if len(supportingInterpreters) == 0 {
-		return fmt.Errorf("no interpreters found supporting major version %d", major)
+		return fmt.Errorf("no python%d interpreters found on $PATH", major)
 	}
 
 	// Sort so the latest supporting interpreter is first

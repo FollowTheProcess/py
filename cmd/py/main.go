@@ -36,6 +36,7 @@ import (
 	"strings"
 
 	"github.com/FollowTheProcess/py/cli"
+	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"
 )
 
@@ -49,7 +50,8 @@ func main() {
 	// then run the program, passing all args (other than the binary name) to run
 	app := cli.New(os.Stdout, os.Stderr)
 	if err := run(app, os.Args[1:]); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		prefix := color.RedString("error")
+		fmt.Fprintf(os.Stderr, "%s: %s\n", prefix, err)
 		os.Exit(1)
 	}
 }
