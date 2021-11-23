@@ -130,10 +130,6 @@ As previously mentioned, this experimental port behaves slightly differently tha
 
 ![control_flow](https://raw.githubusercontent.com/FollowTheProcess/py/main/docs/control_flow/control_flow.svg)
 
-[python-launcher]: https://github.com/brettcannon/python-launcher
-[README]: https://github.com/brettcannon/python-launcher/blob/main/README.md
-[Github releases]: https://github.com/FollowTheProcess/py/releases
-
 ## Benchmarks
 
 Although I've not made any special efforts to optimise `py`, it is very close to the original [python-launcher] in terms of performance:
@@ -142,3 +138,33 @@ Although I've not made any special efforts to optimise `py`, it is very close to
 * **Right:** The original [python-launcher] written in Rust
 
 ![comparison](https://raw.githubusercontent.com/FollowTheProcess/py/main/docs/img/comp.png)
+
+## FAQ
+
+### Does this version still work with [Starship] and display the Python version?
+
+**Short answer:** Yes! :tada: If you already have [Starship] set up for the original [python-launcher], this one should work just fine!
+
+To set it up:
+
+Add the following to your [Starship configuration file]:
+
+```TOML
+[python]
+python_binary = ["py"]
+# The following isn't necessary, but convenient.
+detect_folders = [".venv"]
+```
+
+![Starship terminal showing change in Python version after creating a virtual environment](https://user-images.githubusercontent.com/54418/134999646-05e0e9bf-2145-4d80-863e-7ced921323b3.png)
+
+By using the Launcher with Starship, your prompt will tell you which Python
+version will be used if you run `py`. Since the Launcher supports virtual
+environments, the prompt will properly reflect both what global install of
+Python will be used, but also the local virtual environment.
+
+[python-launcher]: https://github.com/brettcannon/python-launcher
+[README]: https://github.com/brettcannon/python-launcher/blob/main/README.md
+[Github releases]: https://github.com/FollowTheProcess/py/releases
+[Starship]: https://starship.rs/
+[Starship configuration file]: https://starship.rs/config/
