@@ -156,12 +156,10 @@ python_binary = ["py"]
 detect_folders = [".venv"]
 ```
 
-![Starship terminal showing change in Python version after creating a virtual environment](https://user-images.githubusercontent.com/54418/134999646-05e0e9bf-2145-4d80-863e-7ced921323b3.png)
+![Starship virtual env demo](https://github.com/FollowTheProcess/py/raw/main/docs/img/starship_demo.png)
 
-By using the Launcher with Starship, your prompt will tell you which Python
-version will be used if you run `py`. Since the Launcher supports virtual
-environments, the prompt will properly reflect both what global install of
-Python will be used, but also the local virtual environment.
+By using the Launcher with Starship, your prompt will tell you which Python version will be used if you run `py`. Since the Launcher supports virtual
+environments, the prompt will properly reflect both what global install of Python will be used, but also the local virtual environment.
 
 [python-launcher]: https://github.com/brettcannon/python-launcher
 [README]: https://github.com/brettcannon/python-launcher/blob/main/README.md
