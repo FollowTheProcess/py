@@ -313,7 +313,7 @@ func (a *App) LaunchExact(major, minor int, args []string) error {
 
 	// Handle the case where none are found
 	if len(supportingInterpreters) == 0 {
-		return fmt.Errorf("no interpreters found supporting exact version %d.%d", major, minor)
+		return fmt.Errorf("no python%d.%d interpreter found on $PATH", major, minor)
 	}
 
 	// Sort so the latest supporting interpreter is first
@@ -336,7 +336,7 @@ func (a *App) LaunchExact(major, minor int, args []string) error {
 // entries in that path.
 //
 // Entries will be de-duplicated prior to returning.
-func (a *App) getPathEntries() ([]string, error) {
+func (a *App) getPathEntries() []string {
 	paths := []string{}
 
 	for _, dir := range filepath.SplitList(a.Path) {
@@ -350,7 +350,7 @@ func (a *App) getPathEntries() ([]string, error) {
 	// Dedupe
 	paths = deDupe(paths)
 
-	return paths, nil
+	return paths
 }
 
 // getVenvPython will look for a ".venv/bin/python" or a "venv/bin/python"
@@ -455,10 +455,8 @@ func (a *App) parseShebang(shebang string) string {
 // it searches through $PATH and returns a list of all python interpreters
 func (a *App) getAllPythonInterpreters() (interpreter.List, error) {
 	a.Logger.Debugln("Checking $PATH environment variable")
-	paths, err := a.getPathEntries()
-	if err != nil {
-		return nil, fmt.Errorf("%w", err)
-	}
+	paths := a.getPathEntries()
+
 	a.Logger.Debugf("$PATH: %v\n", paths)
 
 	a.Logger.Debugln("Looking through $PATH for python3 interpreters")
