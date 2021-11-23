@@ -51,7 +51,8 @@ func main() {
 	app := cli.New(os.Stdout, os.Stderr)
 	if err := run(app, os.Args[1:]); err != nil {
 		prefix := color.RedString("error")
-		fmt.Fprintf(os.Stderr, "%s: %s\n", prefix, err)
+		e := color.New(color.FgWhite).Add(color.Bold)
+		fmt.Fprintf(os.Stderr, "%s: %s\n", prefix, e.Sprint(err))
 		os.Exit(1)
 	}
 }
