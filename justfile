@@ -73,7 +73,7 @@ cover:
 # Remove build artifacts and other project clutter
 clean:
     go clean ./...
-    rm -rf {{ PROJECT_NAME }} {{ PROJECT_BIN }} {{ COVERAGE_DATA }} {{ COVERAGE_HTML }} {{ GORELEASER_DIST }}
+    rm -rf {{ PROJECT_NAME }} {{ PROJECT_BIN }} {{ COVERAGE_DATA }} {{ COVERAGE_HTML }} {{ GORELEASER_DIST }} *.pprof
 
 # Run unit tests and linting in one go
 check: test lint

@@ -167,15 +167,7 @@ func GetAll(paths []string) (List, error) {
 		interpreters = append(interpreters, found...)
 	}
 
-	// Filter out python2
-	var python3s List
-	for _, intepreter := range interpreters {
-		if intepreter.SatisfiesMajor(3) {
-			python3s = append(python3s, intepreter)
-		}
-	}
-
-	return python3s, nil
+	return interpreters, nil
 }
 
 // getPythonInterpreters accepts an absolute path to a directory under which
@@ -192,8 +184,10 @@ func getPythonInterpreters(dir string) (List, error) {
 		var interpreter Interpreter
 		itemPath := filepath.Join(dir, item.Name())
 		if err := interpreter.FromFilePath(itemPath); err == nil {
-			// Only add if the interpreter is valid, the others we don't care about
-			interpreters = append(interpreters, interpreter)
+			// Only add if the interpreter is valid and python3, the others we don't care about
+			if interpreter.SatisfiesMajor(3) {
+				interpreters = append(interpreters, interpreter)
+			}
 		}
 	}
 
