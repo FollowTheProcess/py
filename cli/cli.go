@@ -459,7 +459,7 @@ func (a *App) getAllPythonInterpreters() (interpreter.List, error) {
 
 	a.Logger.Debugf("$PATH: %v\n", paths)
 
-	a.Logger.Debugln("Looking through $PATH for python3 interpreters")
+	a.Logger.Debugln("Looking through $PATH for python interpreters")
 	interpreters, err := interpreter.GetAll(paths)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching python interpreters: %w", err)
