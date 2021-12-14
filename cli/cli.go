@@ -11,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"syscall"
@@ -132,7 +131,7 @@ func (a *App) List() error {
 	}
 	// Ensure interpreters are sorted latest to oldest regardless of
 	// any filepath based sorting from ReadDir
-	sort.Sort(interpreters)
+	interpreter.Sort(interpreters)
 
 	a.Logger.WithField("interpreters", interpreters).Debugln("Found python3 interpreters")
 
@@ -238,7 +237,7 @@ func (a *App) LaunchLatest(args []string) error {
 		return fmt.Errorf("no python interpreters found on $PATH")
 	}
 
-	sort.Sort(interpreters)
+	interpreter.Sort(interpreters)
 
 	a.Logger.WithField("interpreters", interpreters).Debugln("Found python3 interpreters")
 
@@ -265,7 +264,7 @@ func (a *App) LaunchMajor(major int, args []string) error {
 
 	// Create and populate a list of all the python interpreters that
 	// satisfy the specified major version
-	var supportingInterpreters interpreter.List
+	var supportingInterpreters []interpreter.Interpreter
 	for _, python := range interpreters {
 		if python.SatisfiesMajor(major) {
 			supportingInterpreters = append(supportingInterpreters, python)
@@ -278,7 +277,7 @@ func (a *App) LaunchMajor(major int, args []string) error {
 	}
 
 	// Sort so the latest supporting interpreter is first
-	sort.Sort(supportingInterpreters)
+	interpreter.Sort(supportingInterpreters)
 
 	a.Logger.WithField("matching interpreters", supportingInterpreters).Debugln("Found matching interpreters")
 
@@ -304,7 +303,7 @@ func (a *App) LaunchExact(major, minor int, args []string) error {
 
 	// Create and populate a list of all the python interpreters that
 	// satisfy the specify major version
-	var supportingInterpreters interpreter.List
+	var supportingInterpreters []interpreter.Interpreter
 	for _, python := range interpreters {
 		if python.SatisfiesExact(major, minor) {
 			supportingInterpreters = append(supportingInterpreters, python)
@@ -317,7 +316,7 @@ func (a *App) LaunchExact(major, minor int, args []string) error {
 	}
 
 	// Sort so the latest supporting interpreter is first
-	sort.Sort(supportingInterpreters)
+	interpreter.Sort(supportingInterpreters)
 
 	a.Logger.WithField("matching interpreters", supportingInterpreters).Debugln("Found matching interpreters")
 
@@ -453,7 +452,7 @@ func (a *App) parseShebang(shebang string) string {
 
 // getAllPythonInterpreters does exactly what it says on the tin
 // it searches through $PATH and returns a list of all python interpreters
-func (a *App) getAllPythonInterpreters() (interpreter.List, error) {
+func (a *App) getAllPythonInterpreters() ([]interpreter.Interpreter, error) {
 	a.Logger.Debugln("Checking $PATH environment variable")
 	paths := a.getPathEntries()
 
