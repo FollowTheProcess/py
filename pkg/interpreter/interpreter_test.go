@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
-	"sort"
 	"testing"
 )
 
@@ -182,15 +181,15 @@ func TestInterpreter_String(t *testing.T) {
 	}
 }
 
-func TestListSort(t *testing.T) {
+func TestInterpreterSort(t *testing.T) {
 	tests := []struct {
 		name string
-		list List
-		want List
+		list []Interpreter
+		want []Interpreter
 	}{
 		{
 			name: "test",
-			list: List{
+			list: []Interpreter{
 				// We don't intialise paths because it doesn't matter for sorting
 				{
 					Major: 3,
@@ -233,7 +232,7 @@ func TestListSort(t *testing.T) {
 					Minor: 6,
 				},
 			},
-			want: List{
+			want: []Interpreter{
 				{
 					Major: 4,
 					Minor: 10,
@@ -283,7 +282,7 @@ func TestListSort(t *testing.T) {
 			if len(tt.list) != len(tt.want) {
 				t.Fatalf("len(list): %d, len(want): %d. Check the test cases", len(tt.list), len(tt.want))
 			}
-			sort.Sort(tt.list)
+			Sort(byVersion(tt.list))
 			// Now tt.list should be sorted and match tt.want
 			if !reflect.DeepEqual(tt.list, tt.want) {
 				t.Errorf("got %v, wanted %v", tt.list, tt.want)
@@ -428,13 +427,13 @@ func Test_getPythonInterpreters(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    List
+		want    []Interpreter
 		wantErr bool
 	}{
 		{
 			name: "test",
 			args: args{dir: testDir},
-			want: List{
+			want: []Interpreter{
 				{
 					Major: 3,
 					Minor: 10,
@@ -475,7 +474,7 @@ func TestGetAllPythonInterpreters(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    List
+		want    []Interpreter
 		wantErr bool
 	}{
 		{
@@ -485,7 +484,7 @@ func TestGetAllPythonInterpreters(t *testing.T) {
 				filepath.Join(testDir, "pythonpath2"),
 				filepath.Join(testDir, "pythonpath3"),
 			}},
-			want: List{
+			want: []Interpreter{
 				{
 					Major: 3,
 					Minor: 10,
@@ -553,7 +552,7 @@ func BenchmarkGetAllPythonInterpreters(b *testing.B) {
 }
 
 func BenchmarkInterpreterSort(b *testing.B) {
-	input := List(List{
+	input := []Interpreter([]Interpreter{
 		{
 			Major: 3,
 			Minor: 7,
@@ -601,7 +600,7 @@ func BenchmarkInterpreterSort(b *testing.B) {
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		sort.Sort(input)
+		Sort(byVersion(input))
 	}
 }
 
