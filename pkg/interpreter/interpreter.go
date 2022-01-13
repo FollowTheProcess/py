@@ -19,9 +19,9 @@ const (
 // only major and minor are included because this is how the executables
 // are stored on disk (e.g. /usr/local/bin/python3.9)
 type Interpreter struct {
-	Major int    // The interpreter major version e.g. 3
-	Minor int    // The interpreter minor version e.g. 10
 	Path  string // The absolute path to the interpreter executable
+	Major int    // The intepreter major version e.g. 3
+	Minor int    // The interpreter minor version e.g. 10
 }
 
 // FromFilePath extracts the version information from a python interpreter's filepath
