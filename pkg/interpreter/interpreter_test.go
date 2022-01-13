@@ -111,14 +111,14 @@ func TestInterpreter_FromFilePath(t *testing.T) {
 
 func TestInterpreter_ToString(t *testing.T) {
 	type fields struct {
+		Path  string
 		Major int
 		Minor int
-		Path  string
 	}
 	tests := []struct {
 		name   string
-		fields fields
 		want   string
+		fields fields
 	}{
 		{
 			name:   "python 3.10",
@@ -147,14 +147,14 @@ func TestInterpreter_ToString(t *testing.T) {
 
 func TestInterpreter_String(t *testing.T) {
 	type fields struct {
+		Path  string
 		Major int
 		Minor int
-		Path  string
 	}
 	tests := []struct {
 		name   string
-		fields fields
 		want   string
+		fields fields
 	}{
 		{
 			name:   "python 3.10",

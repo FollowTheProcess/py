@@ -237,8 +237,8 @@ func TestParseExactSpecifier(t *testing.T) {
 func TestCLIFlags(t *testing.T) {
 	tests := []struct {
 		name    string
-		args    []string
 		want    string
+		args    []string
 		wantErr bool
 	}{
 		// Take care not to do anything here that starts a REPL
