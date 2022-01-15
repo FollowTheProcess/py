@@ -60,6 +60,10 @@ bench: fmt
 pprof type:
     go tool pprof -http=:8000 {{ type }}.pprof
 
+# Trace the program
+trace:
+    go tool trace trace.out
+
 # Lint the project and auto-fix errors if possible
 lint: fmt
     golangci-lint run --fix
