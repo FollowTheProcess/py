@@ -12,7 +12,7 @@ import (
 )
 
 // newTestApp creates and returns a test App object configured to talk to 'out' and 'err'
-// with a mocked out $PATH, given by 'path'
+// with a mocked out $PATH, given by 'path'.
 func newTestApp(out, err io.Writer, path string) *App {
 	return &App{
 		Stdout: out,
@@ -362,7 +362,7 @@ func Test_deDupe(t *testing.T) {
 	}
 }
 
-// Not really necessary but I was just curious and it was easy to do
+// Not really necessary but I was just curious and it was easy to do.
 func Benchmark_deDupe(b *testing.B) {
 	// Some paths that contain duplicates
 	paths := []string{

@@ -605,7 +605,7 @@ func BenchmarkInterpreterSort(b *testing.B) {
 }
 
 // getProjectRoot is a convenience function for reliably getting the project root dir from anywhere
-// so that tests can make use of root-relative paths
+// so that tests can make use of root-relative paths.
 func getProjectRoot() (string, error) {
 	_, here, _, ok := runtime.Caller(0)
 	if !ok {
