@@ -178,7 +178,7 @@ func handleMultipleArgs(app *cli.App, args []string) error {
 }
 
 // isMajorSpecifier determines if the argument passed to it
-// is a valid major version specifier (e.g. "-3")
+// is a valid major version specifier (e.g. "-3").
 func isMajorSpecifier(arg string) bool {
 	// If we don't start with a "-" it's not a major specifier
 	if !strings.HasPrefix(arg, "-") {
@@ -205,7 +205,7 @@ func isMajorSpecifier(arg string) bool {
 // and returns the integer version.
 //
 // In the interest of performance, this function assumes that 'arg' is already a valid
-// major version specifier in string form
+// major version specifier in string form.
 func parseMajorSpecifier(arg string) int {
 	// Remove the "-"
 	arg = arg[1:]
@@ -218,7 +218,7 @@ func parseMajorSpecifier(arg string) int {
 }
 
 // isExactSpecifier determines if the argument passed to it
-// is a valid exact version specifier (e.g. "-3.9")
+// is a valid exact version specifier (e.g. "-3.9").
 func isExactSpecifier(arg string) bool {
 	// If we don't start with a "-" it's not a major specifier
 	if !strings.HasPrefix(arg, "-") {
@@ -252,7 +252,7 @@ func isExactSpecifier(arg string) bool {
 // and returns the integer representations.
 //
 // In the interest of performance, this function assumes that 'arg' is already a valid
-// exact version specifier in string form
+// exact version specifier in string form.
 func parseExactSpecifier(arg string) (int, int) {
 	// Remove the "-"
 	arg = arg[1:]

@@ -87,7 +87,7 @@ const (
 
 )
 
-// App represents the py program
+// App represents the py program.
 type App struct {
 	Stdout io.Writer      // Normal CLI output
 	Stderr io.Writer      // Where the logger and errors will write to
@@ -95,7 +95,7 @@ type App struct {
 	Path   string         // The path to search through i.e. $PATH, passable field to facilitate testing
 }
 
-// New creates a new default App configured to write to 'stdout' and DEBUG log to 'stderr'
+// New creates a new default App configured to write to 'stdout' and DEBUG log to 'stderr'.
 func New(stdout, stderr io.Writer) *App {
 	log := logrus.New()
 
@@ -113,12 +113,12 @@ func New(stdout, stderr io.Writer) *App {
 	return &App{Stdout: stdout, Stderr: stderr, Logger: log, Path: path}
 }
 
-// Help shows py's help text and usage info
+// Help shows py's help text and usage info.
 func (a *App) Help() {
 	fmt.Fprintln(a.Stdout, helpText)
 }
 
-// List shows a list of all python interpreters on $PATH, sorted latest to oldest
+// List shows a list of all python interpreters on $PATH, sorted latest to oldest.
 func (a *App) List() error {
 	interpreters, err := a.getAllPythonInterpreters()
 	if err != nil {
@@ -225,7 +225,7 @@ func (a *App) Launch(args []string) error {
 }
 
 // LaunchLatest will search through $PATH, find the latest python interpreter
-// and launch it, passing through any arguments passed to it
+// and launch it, passing through any arguments passed to it.
 func (a *App) LaunchLatest(args []string) error {
 	interpreters, err := a.getAllPythonInterpreters()
 	if err != nil {
@@ -254,7 +254,7 @@ func (a *App) LaunchLatest(args []string) error {
 
 // LaunchMajor will search through $PATH, find the latest python interpreter
 // satisfying the constraint imposed by 'major' version passed
-// launch it, and pass through any arguments passed to it
+// launch it, and pass through any arguments passed to it.
 func (a *App) LaunchMajor(major int, args []string) error {
 	a.Logger.WithField("major", major).Debugln("Searching for latest python with major version")
 	interpreters, err := a.getAllPythonInterpreters()
@@ -293,7 +293,7 @@ func (a *App) LaunchMajor(major int, args []string) error {
 
 // LaunchExact will search through $PATH, find the latest python interpreter
 // satisfying the constraint imposed by both 'major' and 'minor' version passed
-// launch it, and pass through any args passed to it
+// launch it, and pass through any args passed to it.
 func (a *App) LaunchExact(major, minor int, args []string) error {
 	a.Logger.WithField("version", fmt.Sprintf("%d.%d", major, minor)).Debugln("Searching for exact python version")
 	interpreters, err := a.getAllPythonInterpreters()
@@ -357,7 +357,7 @@ func (a *App) getPathEntries() []string {
 // .venv will be preferred over venv, venv will only be used if .venv
 // does not exist.
 //
-// If neither is found, an empty string will be returned
+// If neither is found, an empty string will be returned.
 func (a *App) getVenvPython(cwd string) string {
 	dotVenv := filepath.Join(cwd, ".venv", "bin", "python")
 	venv := filepath.Join(cwd, "venv", "bin", "python")
@@ -380,7 +380,7 @@ func (a *App) getVenvPython(cwd string) string {
 // A valid value for PY_PYTHON is X.Y, the same as the exact version specifier
 // e.g. "3.10"
 //
-// If 'version' is not a valid format, an error will be returned
+// If 'version' is not a valid format, an error will be returned.
 func (a *App) parsePyPython(version string) (int, int, error) {
 	parts := strings.Split(version, ".")
 
@@ -415,7 +415,7 @@ func (a *App) parsePyPython(version string) (int, int, error) {
 //
 // 	sh := ParseShebang("#!/usr/local/bin/python3.9")
 // 	fmt.Println(sh)
-// Output: "3.9"
+// Output: "3.9".
 func (a *App) parseShebang(shebang string) string {
 	a.Logger.Debugln("Checking for a python shebang line")
 	if !strings.HasPrefix(shebang, "#!") {
@@ -451,7 +451,7 @@ func (a *App) parseShebang(shebang string) string {
 }
 
 // getAllPythonInterpreters does exactly what it says on the tin
-// it searches through $PATH and returns a list of all python interpreters
+// it searches through $PATH and returns a list of all python interpreters.
 func (a *App) getAllPythonInterpreters() ([]interpreter.Interpreter, error) {
 	a.Logger.Debugln("Checking $PATH environment variable")
 	paths := a.getPathEntries()
@@ -471,7 +471,7 @@ func (a *App) getAllPythonInterpreters() ([]interpreter.Interpreter, error) {
 // it attempts to open the file, look for a shebang line, parse it
 // and launch the appropriate python interpreter
 // if it does not find a valid shebang line or there is no version found in it
-// it will return to signal the continuation of the control flow
+// it will return to signal the continuation of the control flow.
 func (a *App) handlePotentialShebang(args []string) error {
 	a.Logger.WithField("argument", args[0]).Debugln("argument is a file")
 	file, err := os.Open(args[0])
@@ -521,7 +521,7 @@ func (a *App) handlePotentialShebang(args []string) error {
 
 // launch will launch a python interpreter at a specific (absolute) path
 // and forward any args to the called interpreter. If no args required
-// just pass an empty slice
+// just pass an empty slice.
 func launch(path string, args []string) error {
 	// We must use syscall.Exec here as we must "swap" the process to python
 	// simply running a subprocess e.g. (os/exec), even without waiting
@@ -540,7 +540,7 @@ func launch(path string, args []string) error {
 	return nil
 }
 
-// exists returns true if 'path' exists, else false
+// exists returns true if 'path' exists, else false.
 func exists(path string) bool {
 	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
 		return false
@@ -551,7 +551,7 @@ func exists(path string) bool {
 // deDupe takes in a list of paths (e.g. those returned from GetPath)
 // and returns a de-duplicated list
 // it is not that common to have a duplicated $PATH entry but it could happen
-// so let's handle it here
+// so let's handle it here.
 func deDupe(paths []string) []string {
 	keys := make(map[string]bool)
 	deDuped := []string{}

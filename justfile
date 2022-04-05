@@ -46,7 +46,7 @@ debug *args: build
 
 # Run go fmt on all project files
 fmt:
-    gofumpt -extra -w .
+    go fmt ./...
 
 # Run all project unit tests
 test *flags: fmt

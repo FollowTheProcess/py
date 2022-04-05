@@ -17,7 +17,7 @@ const (
 
 // Interpreter represents a version of a python interpreter
 // only major and minor are included because this is how the executables
-// are stored on disk (e.g. /usr/local/bin/python3.9)
+// are stored on disk (e.g. /usr/local/bin/python3.9).
 type Interpreter struct {
 	Path  string // The absolute path to the interpreter executable
 	Major int    // The intepreter major version e.g. 3
@@ -31,7 +31,7 @@ type Interpreter struct {
 //
 // A valid filepath will look like `/usr/local/bin/python3.9`
 // things like `/usr/local/bin/python` will be rejected as these
-// typically refer to the system version of python which should not be used
+// typically refer to the system version of python which should not be used.
 func (i *Interpreter) FromFilePath(path string) error {
 	// Make sure the file name starts with `python`
 	filename := filepath.Base(path)
@@ -83,7 +83,7 @@ func (i *Interpreter) FromFilePath(path string) error {
 }
 
 // String satisfies the "stringer" interface and allows an `Interpreter`
-// to be printed using fmt.Println, in this case showing the absolute path to the interpreter
+// to be printed using fmt.Println, in this case showing the absolute path to the interpreter.
 func (i Interpreter) String() string {
 	return fmt.Sprint(i.Path)
 }
@@ -93,7 +93,7 @@ func (i Interpreter) String() string {
 // Example
 // 	i := Interpreter{Major: 3, Minor: 10, Path:"/usr/bin/python3.10"}
 // 	fmt.Println(i.ToString())
-// Output: "3.10	│ /usr/bin/python3.10"
+// Output: "3.10	│ /usr/bin/python3.10".
 func (i Interpreter) ToString() string {
 	// Note, the vertical bar character below is not the U+007C "Vertical Line" pipe character
 	// '|' but the U+2502 "Box Drawings Light Vertical" character '│'
@@ -102,13 +102,13 @@ func (i Interpreter) ToString() string {
 }
 
 // SatisfiesMajor tests whether the calling Interpreter satisfies the constraint
-// of it's major version supporting the requested `version`
+// of it's major version supporting the requested `version`.
 func (i Interpreter) SatisfiesMajor(version int) bool {
 	return i.Major == version
 }
 
 // SatisfiesExact tests whether the calling Interpreter satisfies
-// the exact version contraint given by `major` and `minor`
+// the exact version contraint given by `major` and `minor`.
 func (i Interpreter) SatisfiesExact(major, minor int) bool {
 	return i.Major == major && i.Minor == minor
 }
@@ -116,10 +116,10 @@ func (i Interpreter) SatisfiesExact(major, minor int) bool {
 // byVersion represents a list of python interpreters
 // and enables us to implement sorting which is how we tell which one is
 // the latest python version without relying on filesystem lexical order
-// which may not be deterministic
+// which may not be deterministic.
 type byVersion []Interpreter
 
-// Len returns the number of interpreters in the list
+// Len returns the number of interpreters in the list.
 func (bv byVersion) Len() int {
 	return len(bv)
 }
@@ -127,7 +127,7 @@ func (bv byVersion) Len() int {
 // Less returns whether the element with index i should sort
 // less than element with index j
 // Note: we reverse it here and actually test for greater than
-// because we want the latest interpreter to be at the front of the slice
+// because we want the latest interpreter to be at the front of the slice.
 func (bv byVersion) Less(i, j int) bool {
 	// Short circuit, if i.Major > j.Major, return true straight away
 	if bv[i].Major > bv[j].Major {
@@ -145,7 +145,7 @@ func (bv byVersion) Less(i, j int) bool {
 	return false
 }
 
-// Swap swaps the position of two elements in the list
+// Swap swaps the position of two elements in the list.
 func (bv byVersion) Swap(i, j int) {
 	bv[i], bv[j] = bv[j], bv[i]
 }
@@ -156,7 +156,7 @@ func (bv byVersion) Swap(i, j int) {
 // This is allowed in this context because in usage in this program, `paths` will
 // be populated by searching through $PATH, meaning we don't have to bother checking
 // if files are executable etc and $PATH is unlikely to be cluttered with random
-// files called `python` unless they are the interpreter executables
+// files called `python` unless they are the interpreter executables.
 func GetAll(paths []string) ([]Interpreter, error) {
 	var interpreters []Interpreter
 
@@ -179,7 +179,7 @@ func Sort(interpreters []Interpreter) []Interpreter {
 }
 
 // getPythonInterpreters accepts an absolute path to a directory under which
-// it will search for python interpreters, returning any it finds
+// it will search for python interpreters, returning any it finds.
 func getPythonInterpreters(dir string) ([]Interpreter, error) {
 	contents, err := os.ReadDir(dir)
 	if err != nil {
