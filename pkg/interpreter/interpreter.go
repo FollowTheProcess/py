@@ -91,8 +91,10 @@ func (i Interpreter) String() string {
 // ToString is the pretty print representation of an `Interpreter`
 //
 // Example
-// 	i := Interpreter{Major: 3, Minor: 10, Path:"/usr/bin/python3.10"}
-// 	fmt.Println(i.ToString())
+//
+//	i := Interpreter{Major: 3, Minor: 10, Path:"/usr/bin/python3.10"}
+//	fmt.Println(i.ToString())
+//
 // Output: "3.10	│ /usr/bin/python3.10".
 func (i Interpreter) ToString() string {
 	// Note, the vertical bar character below is not the U+007C "Vertical Line" pipe character

@@ -90,9 +90,9 @@ func run(app *cli.App, args []string) error {
 
 // handleSingleArg handles the case where py is passed a single command line argument
 // which could mean several things:
-// 	1) known flag (e.g. --list)
-// 	2) version specifier of the form -X or -X.Y
-// 	3) file (e.g. py script.py)
+//  1. known flag (e.g. --list)
+//  2. version specifier of the form -X or -X.Y
+//  3. file (e.g. py script.py)
 func handleSingleArg(app *cli.App, arg string) error {
 	switch {
 	case arg == "--help":
@@ -134,9 +134,9 @@ func handleSingleArg(app *cli.App, arg string) error {
 
 // handleMultipleArgs handles the case in which py was passed > 1 command line argument
 // which could mean a few things depending on what the first argument is:
-// 	1) Known flag: error out as they do not support arguments
-// 	2) Version specifier (-X or -X.Y): Launch matching version and pass all other args through
-// 	3) Unknown: Follow control flow to find a python and pass all args through
+//  1. Known flag: error out as they do not support arguments
+//  2. Version specifier (-X or -X.Y): Launch matching version and pass all other args through
+//  3. Unknown: Follow control flow to find a python and pass all args through
 func handleMultipleArgs(app *cli.App, args []string) error {
 	rest := args[1:]
 	switch first := args[0]; {

@@ -145,12 +145,12 @@ func (a *App) List() error {
 // Launch will follow py's control flow and launch whatever is the most appropriate python
 // any arguments specified in 'args' will be passed through to the found python
 // Control flow for no args is:
-// 	1) Activated virtual environment
-// 	2) .venv directory
-// 	3) venv directory
-// 	4) Look for a python shebang line in the file (if we have a file)
-// 	5) PY_PYTHON env variable
-// 	6) Latest version on $PATH
+//  1. Activated virtual environment
+//  2. .venv directory
+//  3. venv directory
+//  4. Look for a python shebang line in the file (if we have a file)
+//  5. PY_PYTHON env variable
+//  6. Latest version on $PATH
 func (a *App) Launch(args []string) error {
 	// Here we follow the control flow specified, returning to the caller
 	// on the first matched condition, thus preventing later conditions
@@ -413,8 +413,9 @@ func (a *App) parsePyPython(version string) (int, int, error) {
 //
 // Example
 //
-// 	sh := ParseShebang("#!/usr/local/bin/python3.9")
-// 	fmt.Println(sh)
+//	sh := ParseShebang("#!/usr/local/bin/python3.9")
+//	fmt.Println(sh)
+//
 // Output: "3.9".
 func (a *App) parseShebang(shebang string) string {
 	a.Logger.Debugln("Checking for a python shebang line")
