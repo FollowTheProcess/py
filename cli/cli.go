@@ -15,7 +15,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/FollowTheProcess/py/pkg/interpreter"
+	"github.com/FollowTheProcess/py/interpreter"
 	"github.com/sirupsen/logrus"
 )
 
