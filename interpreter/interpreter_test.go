@@ -1,10 +1,9 @@
 package interpreter
 
 import (
-	"fmt"
+	"os"
 	"path/filepath"
 	"reflect"
-	"runtime"
 	"testing"
 )
 
@@ -415,9 +414,9 @@ func TestInterpreter_SatisfiesExact(t *testing.T) {
 }
 
 func Test_getPythonInterpreters(t *testing.T) {
-	root, err := getProjectRoot()
+	root, err := os.Getwd()
 	if err != nil {
-		t.Fatalf("could not get project root: %s", err)
+		t.Fatalf("could not get cwd: %s", err)
 	}
 	testDir := filepath.Join(root, "testdata", "pythonpaths", "pythonpath1")
 
@@ -463,9 +462,9 @@ func Test_getPythonInterpreters(t *testing.T) {
 }
 
 func TestGetAllPythonInterpreters(t *testing.T) {
-	root, err := getProjectRoot()
+	root, err := os.Getwd()
 	if err != nil {
-		t.Fatalf("could not get project root: %s", err)
+		t.Fatalf("could not get cwd: %s", err)
 	}
 	testDir := filepath.Join(root, "testdata", "pythonpaths")
 	type args struct {
@@ -528,9 +527,9 @@ func TestGetAllPythonInterpreters(t *testing.T) {
 }
 
 func BenchmarkGetAllPythonInterpreters(b *testing.B) {
-	root, err := getProjectRoot()
+	root, err := os.Getwd()
 	if err != nil {
-		b.Fatalf("could not get project root: %s", err)
+		b.Fatalf("could not get cwd: %s", err)
 	}
 	testDir := filepath.Join(root, "testdata", "pythonpaths")
 
@@ -552,7 +551,7 @@ func BenchmarkGetAllPythonInterpreters(b *testing.B) {
 }
 
 func BenchmarkInterpreterSort(b *testing.B) {
-	input := []Interpreter([]Interpreter{
+	input := []Interpreter{
 		{
 			Major: 3,
 			Minor: 7,
@@ -593,7 +592,7 @@ func BenchmarkInterpreterSort(b *testing.B) {
 			Major: 2,
 			Minor: 6,
 		},
-	})
+	}
 
 	// Reset prior to actually running the benchmark
 	// ensures we don't include the initialisation stuff
@@ -602,15 +601,4 @@ func BenchmarkInterpreterSort(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		Sort(byVersion(input))
 	}
-}
-
-// getProjectRoot is a convenience function for reliably getting the project root dir from anywhere
-// so that tests can make use of root-relative paths.
-func getProjectRoot() (string, error) {
-	_, here, _, ok := runtime.Caller(0)
-	if !ok {
-		return "", fmt.Errorf("could not find current filepath")
-	}
-
-	return filepath.Join(filepath.Dir(here), "../.."), nil
 }
