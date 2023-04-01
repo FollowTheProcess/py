@@ -164,10 +164,7 @@ func (a *App) Launch(args []string) error {
 		a.Logger.WithField("$VIRTUAL_ENV", path).Debugln("Found environment variable")
 		exe := filepath.Join(path, "bin", "python")
 		a.Logger.WithFields(logrus.Fields{"interpreter": exe, "arguments": args}).Debugln("Launching python interpreter with arguments")
-		if err := launch(exe, args); err != nil {
-			return err
-		}
-		return nil
+		return launch(exe, args)
 	}
 
 	// 2) & 3) Directory called .venv or venv in cwd
@@ -182,10 +179,7 @@ func (a *App) Launch(args []string) error {
 	if exe != "" {
 		// Means we found a python interpreter inside .venv, so launch it and pass on any args
 		a.Logger.WithFields(logrus.Fields{"interpreter": exe, "arguments": args}).Debugln("Launching python interpreter with arguments")
-		if err := launch(exe, args); err != nil {
-			return err
-		}
-		return nil
+		return launch(exe, args)
 	}
 
 	// 4) If first arg is a file, look for a python shebang line
@@ -208,10 +202,7 @@ func (a *App) Launch(args []string) error {
 			return fmt.Errorf("%w", err)
 		}
 		// We're good to go
-		if err := a.LaunchExact(major, minor, args); err != nil {
-			return err
-		}
-		return nil
+		return a.LaunchExact(major, minor, args)
 	}
 
 	// 6) Launch latest on $PATH and pass the args through
@@ -245,11 +236,7 @@ func (a *App) LaunchLatest(args []string) error {
 
 	a.Logger.WithFields(logrus.Fields{"latest": latest, "arguments": args}).Debugln("Launching latest python with arguments")
 
-	if err := launch(latest.Path, args); err != nil {
-		return err
-	}
-
-	return nil
+	return launch(latest.Path, args)
 }
 
 // LaunchMajor will search through $PATH, find the latest python interpreter
@@ -284,11 +271,7 @@ func (a *App) LaunchMajor(major int, args []string) error {
 	latest := supportingInterpreters[0]
 
 	a.Logger.WithField("interpreter", latest.Path).Debugln("Launching python")
-	if err := launch(latest.Path, args); err != nil {
-		return err
-	}
-
-	return nil
+	return launch(latest.Path, args)
 }
 
 // LaunchExact will search through $PATH, find the latest python interpreter
@@ -323,11 +306,7 @@ func (a *App) LaunchExact(major, minor int, args []string) error {
 	latest := supportingInterpreters[0]
 
 	a.Logger.WithField("python", latest.Path).Debugln("Launching exact python")
-	if err := launch(latest.Path, args); err != nil {
-		return err
-	}
-
-	return nil
+	return launch(latest.Path, args)
 }
 
 // getPath goes through a.Path (which it expects to be $PATH or similar)
