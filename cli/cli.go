@@ -322,6 +322,12 @@ func (a *App) getPathEntries() []string {
 			// Unix shell semantics: path element "" means "."
 			dir = "."
 		}
+		// Some new thing on macOS that breaks us, there's a new directory
+		// called /var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin
+		// which cannot be read by the user, so we'll just skip it.
+		if strings.HasPrefix(dir, "/var/run") {
+			continue
+		}
 		paths = append(paths, dir)
 	}
 
