@@ -85,6 +85,9 @@ const (
 	debugEnvKey    = "PYLAUNCH_DEBUG" // The key for the env variable to trigger verbose logging
 	pyPythonEnvKey = "PY_PYTHON"      // The key for py's default python environment variable
 
+	xYParts = 2 // Number of parts in an X.Y version specifier
+	xParts  = 1 // Number of parts in an X version specifier
+
 )
 
 // App represents the py program.
@@ -369,7 +372,7 @@ func (a *App) getVenvPython(cwd string) string {
 func (a *App) parsePyPython(version string) (int, int, error) {
 	parts := strings.Split(version, ".")
 
-	if len(parts) != 2 {
+	if len(parts) != xYParts {
 		return 0, 0, fmt.Errorf("malformed PY_PYTHON: not X.Y format")
 	}
 
