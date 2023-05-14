@@ -40,6 +40,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const xYParts = 2 // Number of parts in an X.Y version
+
 func main() {
 	// Note: because we require passing a version specifier (e.g. -X or -X.Y)
 	// we can't use the stdlib flag or spf13 pflag packages as these will get
@@ -212,7 +214,7 @@ func parseMajorSpecifier(arg string) int {
 
 	// We ignore the error here because this will only get called
 	// in the case that isMajorSpecifier has evaluated to true
-	major, _ := strconv.Atoi(arg)
+	major, _ := strconv.Atoi(arg) //nolint: errcheck
 
 	return major
 }
@@ -230,7 +232,7 @@ func isExactSpecifier(arg string) bool {
 
 	// Whats remaining needs to be "X.Y"
 	parts := strings.Split(arg, ".")
-	if len(parts) != 2 {
+	if len(parts) != xYParts {
 		return false
 	}
 
@@ -262,8 +264,8 @@ func parseExactSpecifier(arg string) (int, int) {
 
 	// We ignore the error here because this will only get called
 	// in the case that isExactSpecifier has evaluated to true
-	majorInt, _ := strconv.Atoi(major)
-	minorInt, _ := strconv.Atoi(minor)
+	majorInt, _ := strconv.Atoi(major) //nolint: errcheck
+	minorInt, _ := strconv.Atoi(minor) //nolint: errcheck
 
 	return majorInt, minorInt
 }

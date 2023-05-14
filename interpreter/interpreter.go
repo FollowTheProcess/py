@@ -13,6 +13,7 @@ import (
 
 const (
 	pythonExePrefix = "python"
+	xYParts         = 2 // Number of parts in an X.Y version
 )
 
 // Interpreter represents a version of a python interpreter
@@ -51,7 +52,7 @@ func (i *Interpreter) FromFilePath(path string) error {
 	parts := strings.Split(version, ".")
 
 	// If we can't get a part either side of a ".", we have a bad version
-	if len(parts) != 2 {
+	if len(parts) != xYParts {
 		return fmt.Errorf("malformed interpreter version: %s from filepath: %s", version, path)
 	}
 
@@ -195,7 +196,7 @@ func getPythonInterpreters(dir string) ([]Interpreter, error) {
 		itemPath := filepath.Join(dir, item.Name())
 		if err := interpreter.FromFilePath(itemPath); err == nil {
 			// Only add if the interpreter is valid and python3, the others we don't care about
-			if interpreter.SatisfiesMajor(3) {
+			if interpreter.SatisfiesMajor(3) { //nolint: gomnd
 				interpreters = append(interpreters, interpreter)
 			}
 		}
