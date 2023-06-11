@@ -1,4 +1,4 @@
-package interpreter
+package interpreter //nolint: testpackage // Need access to internals
 
 import (
 	"os"
