@@ -1,6 +1,21 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+    tags:
+      - v*
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: read-all
+
+env:
+  GOEXPERIMENT: loopvar
 
 jobs:
   test:
@@ -8,19 +23,18 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os:
+          - ubuntu-latest
+          - macos-latest
 
     steps:
-      - name: Set up Go 1.21
-        uses: actions/setup-go@v4
-        with:
-          go-version: "1.21"
-
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Download Dependencies
-        run: go mod download
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: go.mod
 
       - name: Run Tests
         run: go test -race ./...
@@ -30,13 +44,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set up Go 1.21
-        uses: actions/setup-go@v4
-        with:
-          go-version: "1.21"
-
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: go.mod
+
+      - name: Clean Mod Cache # See https://github.com/golangci/golangci-lint-action/issues/135
+        run: go clean -modcache
 
       - name: Run Linting
         uses: golangci/golangci-lint-action@v3
@@ -46,19 +63,48 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
 
-    needs: [test, lint]
+    needs:
+      - test
+      - lint
 
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Set up Go 1.21
+      - name: Fetch Existing Tags
+        run: git fetch --force --tags
+
+      - name: Install Syft
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with:
+          repo: anchore/syft
+
+      - name: Parse Release Version
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.21"
+          go-version-file: go.mod
+
+      - name: Publish Draft Release
+        uses: release-drafter/release-drafter@v5
+        with:
+          version: ${{ steps.version.outputs.version }}
+          publish: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
@@ -67,4 +113,4 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN}}
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}

@@ -38,7 +38,8 @@ tidy:
 
 # Compile the project binary
 build: tidy fmt
-    go build -ldflags="-X {{ VERSION_LDFLAG }}=dev -X {{ COMMIT_LDFLAG }}={{ COMMIT_SHA }}" -o {{ PROJECT_BIN }}/{{ PROJECT_NAME }} {{ PROJECT_ENTRY_POINT }}
+    mkdir -p ./bin
+    goreleaser build --single-target --skip-before --snapshot --clean --output ./bin/py
 
 # Compile the project and run with debugging on
 debug *args: build
