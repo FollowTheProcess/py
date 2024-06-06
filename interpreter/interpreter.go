@@ -196,7 +196,7 @@ func getPythonInterpreters(dir string) ([]Interpreter, error) {
 		itemPath := filepath.Join(dir, item.Name())
 		if err := interpreter.FromFilePath(itemPath); err == nil {
 			// Only add if the interpreter is valid and python3, the others we don't care about
-			if interpreter.SatisfiesMajor(3) { //nolint: gomnd
+			if interpreter.SatisfiesMajor(3) { //nolint: mnd
 				interpreters = append(interpreters, interpreter)
 			}
 		}
